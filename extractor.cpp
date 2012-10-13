@@ -84,6 +84,79 @@ int main (int argc, char *argv[]) {
         }
     }
 
+    /*** Setup Scripting Environment ***/
+
+    // Create a new lua state
+    lua_State *myLuaState = luaL_newstate();
+
+    // Connect LuaBind to this lua state
+    luabind::open(myLuaState);
+
+    // Add our function to the state's global scope
+    luabind::module(myLuaState) [
+      luabind::def("print", LUA_print<std::string>),
+      luabind::def("parseMaxspeed", parseMaxspeed),
+      luabind::def("durationIsValid", durationIsValid),
+      luabind::def("parseDuration", parseDuration)
+    ];
+
+    if(0 != luaL_dostring(
+      myLuaState,
+      "print('Initializing LUA engine')\n"
+    )) {
+        ERR(lua_tostring(myLuaState,-1)<< " occured in scripting block");
+    }
+
+    luabind::module(myLuaState) [
+      luabind::class_<HashTable<std::string, std::string> >("keyVals")
+      .def("Add", &HashTable<std::string, std::string>::Add)
+      .def("Find", &HashTable<std::string, std::string>::Find)
+    ];
+
+    luabind::module(myLuaState) [
+      luabind::class_<ImportNode>("Node")
+          .def(luabind::constructor<>())
+          .def_readwrite("lat", &ImportNode::lat)
+          .def_readwrite("lon", &ImportNode::lon)
+          .def_readwrite("id", &ImportNode::id)
+          .def_readwrite("bollard", &ImportNode::bollard)
+          .def_readwrite("traffic_light", &ImportNode::trafficLight)
+          .def_readwrite("tags", &ImportNode::keyVals)
+    ];
+
+    luabind::module(myLuaState) [
+      luabind::class_<_Way>("Way")
+          .def(luabind::constructor<>())
+          .def_readwrite("name", &_Way::name)
+          .def_readwrite("speed", &_Way::speed)
+          .def_readwrite("weight", &_Way::weight)
+          .def_readwrite("type", &_Way::type)
+          .def_readwrite("access", &_Way::access)
+          .def_readwrite("roundabout", &_Way::roundabout)
+          .def_readwrite("is_duration_set", &_Way::isDurationSet)
+          .def_readwrite("is_access_restricted", &_Way::isAccessRestricted)
+          .def_readwrite("ignore_in_grid", &_Way::ignoreInGrid)
+          .def_readwrite("tags", &_Way::keyVals)
+          .def_readwrite("direction", &_Way::direction)
+          .enum_("constants")
+          [
+           luabind::value("notSure", 0),
+           luabind::value("oneway", 1),
+           luabind::value("bidirectional", 2),
+           luabind::value("opposite", 3)
+          ]
+    ];
+    // Now call our function in a lua script
+	INFO("Parsing speedprofile from " << (argc > 2 ? argv[2] : "profile.lua") );
+    if(0 != luaL_dofile(myLuaState, (argc > 2 ? argv[2] : "profile.lua") )) {
+        ERR(lua_tostring(myLuaState,-1)<< " occured in scripting block");
+    }
+
+    //open utility libraries string library;
+    luaL_openlibs(myLuaState);
+
+    /*** End of Scripting Environment Setup; ***/
+
     unsigned amountOfRAM = 1;
     unsigned installedRAM = GetPhysicalmemory(); 
     if(installedRAM < 2048264) {
