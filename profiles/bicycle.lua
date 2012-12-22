@@ -259,7 +259,7 @@ function way_function (way, numberOfNodesInWay)
 	end
 	
 	if highway=='cycleway' then
-		way.weight = 3
+		way.weight = 10
 	else
 		way.weight = 1
 	end

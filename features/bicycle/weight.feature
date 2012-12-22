@@ -2,38 +2,34 @@
 Feature: Way type weights
 	
 	Background:
-		Given the speedprofile "bicycle"
+		Given the profile "bicycle"
 	
 	Scenario: Pick the geometrically shortest route, way types being equal
 		Given the node map
-		 |   | s |  | t |   |
-		 | x | a |  | b | y |
+		 |   | s |   |
+		 | a |   | b |
 
 		And the ways
 		 | nodes | highway |
-		 | xa    | primary |
-		 | by    | primary |
 		 | ab    | primary |
-		 | astb  | primary |
+		 | asb   | primary |
 
 		When I route I should get
-		 | from | to | route    | distance  | time    |
-		 | x    | y  | xa,ab,by | 400m +-10 | 85s +-2 |
-		 | y    | x  | by,ab,xa | 400m +-10 | 85s +-2 |
+		 | from | to | route | distance | time    |
+		 | a    | b  | ab    | 200m +-1 | 42s +-1 |
+		 | b    | a  | ab    | 200m +-1 | 42s +-1 |
 
-	Scenario: Pick  the shortest travel time, even when it's longer
+	Scenario: Pick preferred route, even when it's longer
 		Given the node map
-		 |   | s |  | t |   |
-		 | x | a |  | b | y |
+		 |   | s |   |
+		 | a |   | b |
 
 		And the ways
 		 | nodes | highway  |
-		 | xa    | primary  |
-		 | by    | primary  |
 		 | ab    | primary  |
-		 | astb  | cycleway |
+		 | asb   | cycleway |
 
 		When I route I should get
-		 | from | to | route      | distance  | time     |
-		 | x    | y  | xa,astb,by | 600m +-10 | 128s +-2 |
-		 | y    | x  | by,astb,xa | 600m +-10 | 128s +-2 |
+		 | from | to | route | distance | time    |
+		 | a    | b  | asb   | 250m +-1 | 50s +-1 |
+		 | b    | a  | asb   | 250m +-1 | 50s +-1 |
