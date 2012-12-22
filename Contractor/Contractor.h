@@ -47,10 +47,11 @@ class Contractor {
 private:
     struct _ContractorEdgeData {
         _ContractorEdgeData() :
-            distance(0), id(0), originalEdges(0), shortcut(0), forward(0), backward(0), originalViaNodeID(false) {}
-        _ContractorEdgeData( unsigned _distance, unsigned _originalEdges, unsigned _id, bool _shortcut, bool _forward, bool _backward) :
-            distance(_distance), id(_id), originalEdges(std::min((unsigned)1<<28, _originalEdges) ), shortcut(_shortcut), forward(_forward), backward(_backward), originalViaNodeID(false) {}
+            distance(0), speed(0), id(0), originalEdges(0), shortcut(0), forward(0), backward(0), originalViaNodeID(false) {}
+        _ContractorEdgeData( unsigned _distance, float _speed, unsigned _originalEdges, unsigned _id, bool _shortcut, bool _forward, bool _backward) :
+            distance(_distance), speed(_speed), id(_id), originalEdges(std::min((unsigned)1<<28, _originalEdges) ), shortcut(_shortcut), forward(_forward), backward(_backward), originalViaNodeID(false) {}
         unsigned distance;
+        float speed;
         unsigned id;
         unsigned originalEdges:28;
         bool shortcut:1;
@@ -117,7 +118,7 @@ public:
         while(diter!=dend) {
             newEdge.source = diter->source();
             newEdge.target = diter->target();
-            newEdge.data = _ContractorEdgeData( (std::max)((int)diter->weight(), 1 ),  1,  diter->id(),  false,  diter->isForward(),  diter->isBackward());
+            newEdge.data = _ContractorEdgeData( (std::max)((int)diter->weight(), 1 ),  diter->speed(), 1,  diter->id(),  false,  diter->isForward(),  diter->isBackward());
 
             assert( newEdge.data.distance > 0 );
 #ifndef NDEBUG
@@ -155,6 +156,7 @@ public:
             forwardEdge.data.id = backwardEdge.data.id = id;
             forwardEdge.data.originalEdges = backwardEdge.data.originalEdges = 1;
             forwardEdge.data.distance = backwardEdge.data.distance = std::numeric_limits< int >::max();
+            forwardEdge.data.speed = backwardEdge.data.speed;
             //remove parallel edges
             while ( i < edges.size() && edges[i].source == source && edges[i].target == target ) {
                 if ( edges[i].data.forward )
@@ -614,7 +616,7 @@ private:
                         _ContractorEdge newEdge;
                         newEdge.source = source;
                         newEdge.target = target;
-                        newEdge.data = _ContractorEdgeData( pathDistance, outData.originalEdges + inData.originalEdges, node/*, 0, inData.turnInstruction*/, true, true, false);;
+                        newEdge.data = _ContractorEdgeData( pathDistance, inData.speed, outData.originalEdges + inData.originalEdges, node/*, 0, inData.turnInstruction*/, true, true, false);;
                         insertedEdges.push_back( newEdge );
                         std::swap( newEdge.source, newEdge.target );
                         newEdge.data.forward = false;

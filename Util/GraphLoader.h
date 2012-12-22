@@ -110,7 +110,7 @@ NodeID readBinaryOSRMGraphFromStream(std::istream &in, std::vector<EdgeT>& edgeL
         in.read((char*)&length,             sizeof(int));
         in.read((char*)&dir,                sizeof(short));
         in.read((char*)&speed,              sizeof(int));
-        in.read((char*)&weight,             sizeof(int));
+        in.read((char*)&weight,             sizeof(EdgeWeight));
         in.read((char*)&type,               sizeof(short));
         in.read((char*)&nameID,             sizeof(unsigned));
         in.read((char*)&isRoundabout,       sizeof(bool));
@@ -151,17 +151,13 @@ NodeID readBinaryOSRMGraphFromStream(std::istream &in, std::vector<EdgeT>& edgeL
             std::swap(source, target);
             std::swap(forward, backward);
         }
-        //INFO( "xxxx read edge, length = " << length );
-        //INFO( "xxxx read edge, speed = " << speed );
-        //INFO( "xxxx read edge, weight = " << weight );
         
         double doubleSpeed = speed/100000.0;
-        double doubleWeight = weight/100000.0;
-        weight = ( length * 10. ) / (doubleWeight*doubleSpeed / 3.6);
+        weight = (length * 10. ) / (weight*doubleSpeed / 3.6);
         
-        //INFO( "xxxx2 length = " << length );
-        //INFO( "xxxx2 speed = " << speed );
-        //INFO( "xxxx2 weight = " << weight );
+        //INFO( "graph loader length = " << length );
+        //INFO( "graph loader speed = " << speed );
+        //INFO( "graph loader weight = " << weight );
         EdgeT inputEdge(source, target, nameID, speed, weight, forward, backward, type, isRoundabout, ignoreInGrid, isAccessRestricted );
         edgeList.push_back(inputEdge);
     }

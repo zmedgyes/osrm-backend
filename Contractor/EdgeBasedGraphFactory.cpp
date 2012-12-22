@@ -70,8 +70,11 @@ EdgeBasedGraphFactory::EdgeBasedGraphFactory(int nodes, std::vector<NodeBasedEdg
         if(edge.source == edge.target)
             continue;
 
-		edge.data.speed = (int)i->speed();
-        edge.data.distance = (std::max)((int)i->weight(), 1 );
+        edge.data.speed = (int)i->speed();
+		edge.data.distance = (std::max)((int)i->weight(), 1 );
+        //INFO( "distance: " << edge.data.distance );
+        //INFO( "speed: " << edge.data.speed );
+        
         assert( edge.data.distance > 0 );
         edge.data.shortcut = false;
         edge.data.roundabout = i->isRoundabout();
