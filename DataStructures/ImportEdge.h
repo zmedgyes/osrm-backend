@@ -44,14 +44,14 @@ public:
     NodeBasedEdge() :
         _source(0), _target(0), _name(0), _speed(0), _weight(0), forward(0), backward(0), _type(0), _roundabout(false), _ignoreInGrid(false), _accessRestricted(false) { assert(false); } //shall not be used.
 
-    explicit NodeBasedEdge(NodeID s, NodeID t, NodeID n, EdgeWeight sp, EdgeWeight w, bool f, bool b, short ty, bool ra, bool ig, bool ar) :
+    explicit NodeBasedEdge(NodeID s, NodeID t, NodeID n, EdgeWeight sp, float w, bool f, bool b, short ty, bool ra, bool ig, bool ar) :
             _source(s), _target(t), _name(n), _speed(sp), _weight(w), forward(f), backward(b), _type(ty), _roundabout(ra), _ignoreInGrid(ig), _accessRestricted(ar) { if(ty < 0) {ERR("Type: " << ty);}; }
 
     NodeID target() const {return _target; }
     NodeID source() const {return _source; }
     NodeID name() const { return _name; }
     EdgeWeight speed() const {return _speed; }
-    EdgeWeight weight() const {return _weight; }
+    float weight() const {return _weight; }
 
     short type() const { assert(_type >= 0); return _type; }
     bool isBackward() const { return backward; }
@@ -107,13 +107,13 @@ public:
     EdgeBasedEdge() :
         _source(0), _target(0), _edgeID(0), _speed(0), _weight(0), _forward(false), _backward(false) { }
 
-    explicit EdgeBasedEdge(NodeID s, NodeID t, NodeID v, EdgeWeight sp, EdgeWeight w, bool f, bool b) :
+    explicit EdgeBasedEdge(NodeID s, NodeID t, NodeID v, EdgeWeight sp, float w, bool f, bool b) :
             _source(s), _target(t), _edgeID(v), _speed(sp), _weight(w), _forward(f), _backward(b){}
 
     NodeID target() const {return _target; }
     NodeID source() const {return _source; }
     EdgeWeight speed() const {return _speed; }
-    EdgeWeight weight() const {return _weight; }
+    float weight() const {return _weight; }
     NodeID id() const { return _edgeID; }
     bool isBackward() const { return _backward; }
     bool isForward() const { return _forward; }

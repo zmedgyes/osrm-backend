@@ -221,7 +221,7 @@ void ExtractionContainers::PrepareData(const std::string & outputFileName, const
 
                     double distance = ApproximateDistance(edgeIT->startCoord.lat, edgeIT->startCoord.lon, nodesIT->lat, nodesIT->lon);
                     assert(edgeIT->speed != -1);
-                    EdgeWeight weight = edgeIT->weight;
+                    float weight = edgeIT->weight;
                     int intSpeed = round( edgeIT->speed*100000 );
                     //int intWeight = std::max(1, (int)std::floor((edgeIT->isDurationSet ? edgeIT->speed : weight)+.5) );
                     int intDist = std::max(1, (int)distance);
@@ -255,7 +255,7 @@ void ExtractionContainers::PrepareData(const std::string & outputFileName, const
                     //INFO( "write weight = " << weight );
                     
                     fout.write((char*)&intSpeed, sizeof(int));
-                    fout.write((char*)&weight, sizeof(EdgeWeight));
+                    fout.write((char*)&weight, sizeof(float));
                     assert(edgeIT->type >= 0);
                     fout.write((char*)&edgeIT->type, sizeof(short));
                     fout.write((char*)&edgeIT->nameID, sizeof(unsigned));

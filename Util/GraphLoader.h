@@ -98,7 +98,7 @@ NodeID readBinaryOSRMGraphFromStream(std::istream &in, std::vector<EdgeT>& edgeL
 
     edgeList.reserve(m);
     int speed;
-    EdgeWeight weight;
+    float weight;
     short type;
     NodeID nameID;
     int length;
@@ -110,7 +110,7 @@ NodeID readBinaryOSRMGraphFromStream(std::istream &in, std::vector<EdgeT>& edgeL
         in.read((char*)&length,             sizeof(int));
         in.read((char*)&dir,                sizeof(short));
         in.read((char*)&speed,              sizeof(int));
-        in.read((char*)&weight,             sizeof(EdgeWeight));
+        in.read((char*)&weight,             sizeof(float));
         in.read((char*)&type,               sizeof(short));
         in.read((char*)&nameID,             sizeof(unsigned));
         in.read((char*)&isRoundabout,       sizeof(bool));
@@ -153,7 +153,7 @@ NodeID readBinaryOSRMGraphFromStream(std::istream &in, std::vector<EdgeT>& edgeL
         }
         
         double doubleSpeed = speed/100000.0;
-        weight = (length * 10. ) / (weight*doubleSpeed / 3.6);
+        weight = (weight * length * 10. * 3.6) / doubleSpeed;
         
         //INFO( "graph loader length = " << length );
         //INFO( "graph loader speed = " << speed );
