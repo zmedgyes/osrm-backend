@@ -59,7 +59,7 @@ public:
         struct EdgeData {
         	NodeID via;
         	unsigned nameID;
-        	int speed;
+        	float speed;
         	int distance;
         	TurnInstruction turnInstruction;
         	bool shortcut:1;
