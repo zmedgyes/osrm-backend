@@ -98,7 +98,7 @@ NodeID readBinaryOSRMGraphFromStream(std::istream &in, std::vector<EdgeT>& edgeL
 
     edgeList.reserve(m);
     int speed;
-    float weight;
+    float impedance;
     short type;
     NodeID nameID;
     int length;
@@ -110,7 +110,7 @@ NodeID readBinaryOSRMGraphFromStream(std::istream &in, std::vector<EdgeT>& edgeL
         in.read((char*)&length,             sizeof(int));
         in.read((char*)&dir,                sizeof(short));
         in.read((char*)&speed,              sizeof(int));
-        in.read((char*)&weight,             sizeof(float));
+        in.read((char*)&impedance,             sizeof(float));
         in.read((char*)&type,               sizeof(short));
         in.read((char*)&nameID,             sizeof(unsigned));
         in.read((char*)&isRoundabout,       sizeof(bool));
@@ -118,7 +118,7 @@ NodeID readBinaryOSRMGraphFromStream(std::istream &in, std::vector<EdgeT>& edgeL
         in.read((char*)&isAccessRestricted, sizeof(bool));
         
         GUARANTEE(length > 0, "loaded null length edge" );
-        GUARANTEE(weight > 0, "loaded null weight");
+        GUARANTEE(impedance > 0, "loaded null impedance");
         GUARANTEE(0<=dir && dir<=2, "loaded bogus direction");
 
         bool forward = true;
@@ -153,12 +153,12 @@ NodeID readBinaryOSRMGraphFromStream(std::istream &in, std::vector<EdgeT>& edgeL
         }
         
         double doubleSpeed = speed/100000.0;
-        weight = (weight * length * 10. * 3.6) / doubleSpeed;
+        impedance = (impedance * length * 10. * 3.6);
         
         //INFO( "graph loader length = " << length );
         //INFO( "graph loader speed = " << speed );
-        //INFO( "graph loader weight = " << weight );
-        EdgeT inputEdge(source, target, nameID, speed, weight, forward, backward, type, isRoundabout, ignoreInGrid, isAccessRestricted );
+        //INFO( "graph loader impedance = " << impedance );
+        EdgeT inputEdge(source, target, nameID, speed, impedance, forward, backward, type, isRoundabout, ignoreInGrid, isAccessRestricted );
         edgeList.push_back(inputEdge);
     }
     std::sort(edgeList.begin(), edgeList.end());

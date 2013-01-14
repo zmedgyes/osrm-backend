@@ -68,9 +68,9 @@ function way_function (way, numberOfNodesInWay)
 	end
 	
 	if impedance and impedance ~= '' then
-		way.impedance = tonumber(impedance)
+		way.impedance = tonumber(impedance) / way.speed
 	else
-		way.impedance = 1
+		way.impedance = 1.0 / way.speed
 	end
 
 	way.type = 1
