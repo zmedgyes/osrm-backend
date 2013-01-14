@@ -45,7 +45,7 @@ function way_function (way, numberOfNodesInWay)
 	local oneway = way.tags:Find("oneway")
 	local route = way.tags:Find("route")
 	local duration = way.tags:Find("duration")
-	local weight = way.tags:Find("weight")
+	local impedance = way.tags:Find("impedance")
 	
 	way.name = name
 
@@ -67,10 +67,10 @@ function way_function (way, numberOfNodesInWay)
 		way.direction = Way.bidirectional
 	end
 	
-	if weight and weight ~= '' then
-		way.weight = tonumber(weight)
+	if impedance and impedance ~= '' then
+		way.impedance = tonumber(impedance)
 	else
-		way.weight = 1
+		way.impedance = 1
 	end
 
 	way.type = 1

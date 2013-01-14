@@ -81,10 +81,10 @@ Note: With the default grid size of 100m, the diagonals has a length if 141.42m
  		 | t |   |   |
 
  		And the ways
- 		 | nodes |
- 		 | ab    |
- 		 | bc    |
- 		 | at    |
+ 		 | nodes | impedance |
+ 		 | ab    | 0.5       |
+ 		 | bc    | 2         |
+ 		 | at    |           |
 
  		When I route I should get
  		 | from | to | route | distance | time    |
