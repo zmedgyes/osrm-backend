@@ -36,11 +36,20 @@ or see http://www.gnu.org/licenses/agpl.txt.
 #include <climits>
 #include <string>
 
+struct ExtractorRoute;
 typedef boost::unordered_map<std::string, NodeID > StringMap;
 typedef boost::unordered_map<std::string, std::pair<int, short> > StringToIntPairMap;
+typedef std::pair<std::string,int64_t> RouteMembership;
+typedef boost::unordered_multimap<int64_t,RouteMembership> WayToRouteMap;
+typedef boost::unordered_map< int64_t, ExtractorRoute > RouteMap;
 
 struct ExtractionWay {
-    ExtractionWay() {
+    ExtractionWay() : id(0) {
+		Clear();
+    }
+    
+    ExtractionWay(unsigned _id) :
+    id(_id) {
 		Clear();
     }
 
@@ -85,6 +94,20 @@ struct ExtractorRelation {
         unknown = 0, ferry, turnRestriction
     } type;
     HashTable<std::string, std::string> keyVals;
+};
+
+
+struct ExtractorRoute {
+public:
+    ExtractorRoute() : id(0) {}
+    ExtractorRoute(unsigned _id) : id(_id) {}
+    
+    inline std::string Tag(std::string key) const {
+        return std::string("boh");
+    }
+
+    unsigned id;
+    HashTable<std::string, std::string> tags;
 };
 
 struct InternalExtractorEdge {

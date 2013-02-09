@@ -23,6 +23,7 @@ or see http://www.gnu.org/licenses/agpl.txt.
 
 #include "ExtractorCallbacks.h"
 #include "ScriptingEnvironment.h"
+#include "../DataStructures/LuaRouteIterator.h"
 #include "../Util/OSRMException.h"
 #include "../Util/SimpleLogger.h"
 
@@ -42,12 +43,13 @@ public:
     virtual bool Parse() = 0;
 
     virtual void ParseNodeInLua(ImportNode& n, lua_State* luaStateForThread);
-    virtual void ParseWayInLua(ExtractionWay& n, lua_State* luaStateForThread);
+    virtual void ParseWayInLua(ExtractionWay& n, LuaRouteIterator& routes, lua_State* luaStateForThread);
     virtual void report_errors(lua_State *L, const int status) const;
 
 protected:
     virtual void ReadUseRestrictionsSetting();
     virtual void ReadRestrictionExceptions();
+    virtual void ReadUseRouteRelationSetting();
     virtual bool ShouldIgnoreRestriction(const std::string& except_tag_string) const;
 
     ExtractorCallbacks* extractor_callbacks;
@@ -55,7 +57,9 @@ protected:
     lua_State* luaState;
     std::vector<std::string> restriction_exceptions;
     bool use_turn_restrictions;
-
+    bool use_route_relations;
+    WayToRouteMap wayToRouteMap;
+    RouteMap routeMap;
 };
 
 #endif /* BASEPARSER_H_ */

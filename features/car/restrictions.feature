@@ -210,8 +210,8 @@ Feature: Car - Turn restrictions
             | sj    | no     |
             | xj    | -1     |
             | aj    | -1     |
-            | bj    | no     |
-            | cj    | no     |
+            | bj    | -1     |
+            | cj    | -1     |
             | dj    | -1     |
 
         And the relations

@@ -34,7 +34,6 @@
 
 class ScriptingEnvironment {
 public:
-    ScriptingEnvironment();
     ScriptingEnvironment(const char * fileName);
     virtual ~ScriptingEnvironment();
 

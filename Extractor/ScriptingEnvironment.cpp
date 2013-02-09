@@ -19,8 +19,8 @@
  */
 
 #include "ScriptingEnvironment.h"
+#include "../DataStructures/LuaRouteIterator.h"
 
-ScriptingEnvironment::ScriptingEnvironment() {}
 ScriptingEnvironment::ScriptingEnvironment(const char * fileName) {
 	SimpleLogger().Write() << "Using script " << fileName;
 
@@ -48,12 +48,23 @@ ScriptingEnvironment::ScriptingEnvironment(const char * fileName) {
         ];
 
         luabind::module(myLuaState) [
-            luabind::class_<HashTable<std::string, std::string> >("keyVals")
-            .def("Add", &HashTable<std::string, std::string>::Add)
-            .def("Find", &HashTable<std::string, std::string>::Find)
-            .def("Holds", &HashTable<std::string, std::string>::Holds)
+             luabind::class_<HashTable<std::string, std::string> >("keyVals")
+             .def("Add", &HashTable<std::string, std::string>::Add)
+             .def("Find", &HashTable<std::string, std::string>::Find)
+             .def("Holds", &HashTable<std::string, std::string>::Holds)
         ];
 
+        luabind::module(myLuaState) [
+                                      luabind::class_<ExtractorRoute>("ExtractorRoute")
+                                      .def_readwrite("id", &ExtractorRoute::id)
+                                      .def_readwrite("tags", &ExtractorRoute::tags)
+                                      ];
+
+         luabind::module(myLuaState) [
+                                      luabind::class_<LuaRouteIterator>("routes")
+                                      .def("Next", &LuaRouteIterator::Next)
+                                      ];
+                                      
         luabind::module(myLuaState) [
             luabind::class_<ImportNode>("Node")
             .def(luabind::constructor<>())
@@ -66,26 +77,26 @@ ScriptingEnvironment::ScriptingEnvironment(const char * fileName) {
         ];
 
         luabind::module(myLuaState) [
-            luabind::class_<ExtractionWay>("Way")
-            .def(luabind::constructor<>())
-            .def_readwrite("name", &ExtractionWay::name)
-            .def_readwrite("speed", &ExtractionWay::speed)
-            .def_readwrite("backward_speed", &ExtractionWay::backward_speed)
-            .def_readwrite("duration", &ExtractionWay::duration)
-            .def_readwrite("type", &ExtractionWay::type)
-            .def_readwrite("access", &ExtractionWay::access)
-            .def_readwrite("roundabout", &ExtractionWay::roundabout)
-            .def_readwrite("is_access_restricted", &ExtractionWay::isAccessRestricted)
-            .def_readwrite("ignore_in_grid", &ExtractionWay::ignoreInGrid)
-            .def_readwrite("tags", &ExtractionWay::keyVals)
-            .def_readwrite("direction", &ExtractionWay::direction)
-            .enum_("constants") [
-				  luabind::value("notSure", 0),
-				  luabind::value("oneway", 1),
-				  luabind::value("bidirectional", 2),
-				  luabind::value("opposite", 3)
-			]
-    	];
+        luabind::class_<ExtractionWay>("Way")
+        .def(luabind::constructor<>())
+        .def_readwrite("name", &ExtractionWay::name)
+        .def_readwrite("speed", &ExtractionWay::speed)
+        .def_readwrite("backward_speed", &ExtractionWay::backward_speed)
+        .def_readwrite("duration", &ExtractionWay::duration)
+        .def_readwrite("type", &ExtractionWay::type)
+        .def_readwrite("access", &ExtractionWay::access)
+        .def_readwrite("roundabout", &ExtractionWay::roundabout)
+        .def_readwrite("is_access_restricted", &ExtractionWay::isAccessRestricted)
+        .def_readwrite("ignore_in_grid", &ExtractionWay::ignoreInGrid)
+        .def_readwrite("tags", &ExtractionWay::keyVals)
+        .def_readwrite("direction", &ExtractionWay::direction)
+        .enum_("constants") [
+			  luabind::value("notSure", 0),
+			  luabind::value("oneway", 1),
+			  luabind::value("bidirectional", 2),
+			  luabind::value("opposite", 3)
+		]
+	];
 
         luabind::module(myLuaState) [
             luabind::class_<std::vector<std::string> >("vector")

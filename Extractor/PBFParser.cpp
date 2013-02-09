@@ -18,15 +18,15 @@
  or see http://www.gnu.org/licenses/agpl.txt.
  */
 
+#include <sys/time.h>
 #include "PBFParser.h"
 
 PBFParser::PBFParser(const char * fileName, ExtractorCallbacks* ec, ScriptingEnvironment& se) : BaseParser( ec, se ) {
 	GOOGLE_PROTOBUF_VERIFY_VERSION;
 	//TODO: What is the bottleneck here? Filling the queue or reading the stuff from disk?
 	//NOTE: With Lua scripting, it is parsing the stuff. I/O is virtually for free.
-	threadDataQueue = boost::make_shared<ConcurrentQueue<_ThreadData*> >( 2500 ); /* Max 2500 items in queue, hardcoded. */
 	input.open(fileName, std::ios::in | std::ios::binary);
-
+    
 	if (!input) {
 		throw OSRMException("pbf file not found.");
 	}
@@ -35,6 +35,8 @@ PBFParser::PBFParser(const char * fileName, ExtractorCallbacks* ec, ScriptingEnv
 	blockCount = 0;
 	groupCount = 0;
 #endif
+
+    threadDataQueue = boost::make_shared<ConcurrentQueue<_ThreadData*> >( 2500 ); /* Max 2500 items in queue, hardcoded. */
 }
 
 PBFParser::~PBFParser() {
@@ -42,11 +44,6 @@ PBFParser::~PBFParser() {
 		input.close();
 	}
 
-	// Clean up any leftover ThreadData objects in the queue
-	_ThreadData* td;
-	while (threadDataQueue->try_pop(td)) {
-		delete td;
-	}
 	google::protobuf::ShutdownProtobufLibrary();
 
 #ifndef NDEBUG
@@ -57,13 +54,26 @@ PBFParser::~PBFParser() {
 #endif
 }
 
+inline void PBFParser::CleanQueue() {
+    // Clean up any leftover ThreadData objects in the queue
+	_ThreadData* td;
+	while (threadDataQueue->try_pop(td)) {
+		delete td;
+	}
+}
+
 inline bool PBFParser::ReadHeader() {
+	input.clear();    
+    input.seekg(0,std::ios_base::beg);
+    
+	
+	
 	_ThreadData initData;
 	/** read Header */
 	if(!readPBFBlobHeader(input, &initData)) {
 		return false;
 	}
-
+    
 	if(readBlob(input, &initData)) {
 		if(!initData.PBFHeaderBlock.ParseFromArray(&(initData.charBuffer[0]), initData.charBuffer.size() ) ) {
 			std::cerr << "[error] Header not parseable!" << std::endl;
@@ -88,6 +98,7 @@ inline bool PBFParser::ReadHeader() {
 	} else {
 		std::cerr << "[error] blob not loaded!" << std::endl;
 	}
+    
 	return true;
 }
 
@@ -121,19 +132,18 @@ inline void PBFParser::ParseData() {
 		for(int i = 0, groupSize = threadData->PBFprimitiveBlock.primitivegroup_size(); i < groupSize; ++i) {
 			threadData->currentGroupID = i;
 			loadGroup(threadData);
-
-			if(threadData->entityTypeIndicator == TypeNode) {
-				parseNode(threadData);
-			}
-			if(threadData->entityTypeIndicator == TypeWay) {
-				parseWay(threadData);
-			}
-			if(threadData->entityTypeIndicator == TypeRelation) {
-				parseRelation(threadData);
-			}
-			if(threadData->entityTypeIndicator == TypeDenseNode) {
-				parseDenseNode(threadData);
-			}
+          
+            if( parsingStep == eRelations ) {
+    			if(threadData->entityTypeIndicator == TypeRelation)
+    				parseRelation(threadData);
+	    	} else if( parsingStep == eOther ) {
+	    		if(threadData->entityTypeIndicator == TypeNode)
+    				parseNode(threadData);
+    			if(threadData->entityTypeIndicator == TypeWay)
+    				parseWay(threadData);
+    			if(threadData->entityTypeIndicator == TypeDenseNode)
+    				parseDenseNode(threadData);
+    		}
 		}
 
 		delete threadData;
@@ -141,8 +151,17 @@ inline void PBFParser::ParseData() {
 	}
 }
 
-inline bool PBFParser::Parse() {
-	// Start the read and parse threads
+inline void PBFParser::ParseStep(ParsingStep step) {
+    parsingStep = step;
+    
+    ReadHeader();
+    
+    #ifndef NDEBUG
+    blockCount = 0;
+    groupCount = 0;
+    #endif
+
+    // Start the read and parse threads
 	boost::thread readThread(boost::bind(&PBFParser::ReadData, this));
 
 	//Open several parse threads that are synchronized before call to
@@ -151,11 +170,27 @@ inline bool PBFParser::Parse() {
 	// Wait for the threads to finish
 	readThread.join();
 	parseThread.join();
-
-	return true;
+	
+	CleanQueue();
 }
 
-inline void PBFParser::parseDenseNode(_ThreadData * threadData) {
+inline bool PBFParser::Parse() {
+    double time;
+    
+    time = get_timestamp();
+    SimpleLogger().Write() << "Parsing relations...";
+	ParseStep(eRelations);
+    SimpleLogger().Write() << "Parsing relations done after " << get_timestamp() - time << " seconds";
+    
+    time = get_timestamp();
+    SimpleLogger().Write() << "Parsing nodes and ways...";
+    ParseStep(eOther);
+    SimpleLogger().Write() << "Parsing nodes and ways done after " << get_timestamp() - time << " seconds";
+
+    return true;
+}
+
+inline void PBFParser::parseDenseNode(_ThreadData * threadData) {    
 	const OSMPBF::DenseNodes& dense = threadData->PBFprimitiveBlock.primitivegroup( threadData->currentGroupID ).dense();
 	int denseTagIndex = 0;
 	int64_t m_lastDenseID = 0;
@@ -202,98 +237,130 @@ inline void PBFParser::parseNode(_ThreadData * ) {
 	);
 }
 
-inline void PBFParser::parseRelation(_ThreadData * threadData) {
-	//TODO: leave early, if relation is not a restriction
-	//TODO: reuse rawRestriction container
+inline void PBFParser::parseRestriction(_ThreadData* threadData, const OSMPBF::Relation& inputRelation) {
 	if( !use_turn_restrictions ) {
 		return;
 	}
-	const OSMPBF::PrimitiveGroup& group = threadData->PBFprimitiveBlock.primitivegroup( threadData->currentGroupID );
+    
+    bool isOnlyRestriction = false;
+	std::string exception_of_restriction_tag;
 
-	for(int i = 0, relation_size = group.relations_size(); i < relation_size; ++i ) {
-		std::string except_tag_string;
-		const OSMPBF::Relation& inputRelation = threadData->PBFprimitiveBlock.primitivegroup( threadData->currentGroupID ).relations(i);
-		bool isRestriction = false;
-		bool isOnlyRestriction = false;
-		for(int k = 0, endOfKeys = inputRelation.keys_size(); k < endOfKeys; ++k) {
-			const std::string & key = threadData->PBFprimitiveBlock.stringtable().s(inputRelation.keys(k));
-			const std::string & val = threadData->PBFprimitiveBlock.stringtable().s(inputRelation.vals(k));
-			if ("type" == key) {
-				if( "restriction" == val) {
-					isRestriction = true;
-				} else {
-					break;
-				}
-			}
-			if ("restriction" == key) {
-				if(val.find("only_") == 0) {
-					isOnlyRestriction = true;
-				}
-			}
-			if ("except" == key) {
-				except_tag_string = val;
-			}
+    for(int k = 0, endOfKeys = inputRelation.keys_size(); k < endOfKeys; ++k) {
+        const std::string & key = threadData->PBFprimitiveBlock.stringtable().s(inputRelation.keys(k));
+        const std::string & val = threadData->PBFprimitiveBlock.stringtable().s(inputRelation.vals(k));
+        if ("restriction" == key) {
+            if(val.find("only_") == 0)
+                isOnlyRestriction = true;
+        }
+        if ("except" == key) {
+            exception_of_restriction_tag = val;
+        }
+    }
+
+    if(ShouldIgnoreRestriction(exception_of_restriction_tag)) {
+        return;
+    }
+
+    int64_t lastRef = 0;
+    _RawRestrictionContainer currentRestrictionContainer(isOnlyRestriction);
+    for(int rolesIndex = 0; rolesIndex < inputRelation.roles_sid_size(); ++rolesIndex) {
+        std::string role(threadData->PBFprimitiveBlock.stringtable().s( inputRelation.roles_sid( rolesIndex ) ).data());
+        lastRef += inputRelation.memids(rolesIndex);
+
+        if(!("from" == role || "to" == role || "via" == role)) {
+            continue;
+        }
+
+        switch(inputRelation.types(rolesIndex)) {
+            case 0: //node
+            if("from" == role || "to" == role) //Only via should be a node
+                continue;
+            assert("via" == role);
+            if(UINT_MAX != currentRestrictionContainer.viaNode)
+                currentRestrictionContainer.viaNode = UINT_MAX;
+            assert(UINT_MAX == currentRestrictionContainer.viaNode);
+            currentRestrictionContainer.restriction.viaNode = lastRef;
+            break;
+            case 1: //way
+            assert("from" == role || "to" == role || "via" == role);
+            if("from" == role) {
+                currentRestrictionContainer.fromWay = lastRef;
+            }
+            if ("to" == role) {
+                currentRestrictionContainer.toWay = lastRef;
+            }
+            if ("via" == role) {
+                assert(currentRestrictionContainer.restriction.toNode == UINT_MAX);
+                currentRestrictionContainer.viaNode = lastRef;
+            }
+            break;
+            case 2: //relation, not used. relations relating to relations are evil.
+            continue;
+            assert(false);
+            break;
+
+            default: //should not happen
+            //cout << "unknown";
+            assert(false);
+            break;
+        }
+    }
+    
+    if(!extractor_callbacks->restrictionFunction(currentRestrictionContainer))
+        std::cerr << "[PBFParser] relation not parsed" << std::endl;
+}
+
+inline void PBFParser::parseRoute(_ThreadData* threadData, const OSMPBF::Relation& inputRelation) {  
+    int64_t wayRef = 0;
+    for(int rolesIndex = 0; rolesIndex < inputRelation.roles_sid_size(); ++rolesIndex) {
+        std::string role(threadData->PBFprimitiveBlock.stringtable().s( inputRelation.roles_sid( rolesIndex ) ).data());
+        wayRef += inputRelation.memids(rolesIndex);
+
+    	ExtractorRoute r( inputRelation.id() );
+
+		for(int i = 0; i < inputRelation.keys_size(); ++i) {
+			const std::string & key = threadData->PBFprimitiveBlock.stringtable().s(inputRelation.keys(i));
+			const std::string & val = threadData->PBFprimitiveBlock.stringtable().s(inputRelation.vals(i));
+			if( key != "type" )
+			    r.tags.Add(key, val);
 		}
+        
+        routeMap.insert(RouteMap::value_type(inputRelation.id(), r));
+                
+        switch(inputRelation.types(rolesIndex)) {
+            case 0: //node
+            break;
+            case 1: //way
+                //insert way->route into route map
+                wayToRouteMap.insert(WayToRouteMap::value_type(wayRef, RouteMembership(role,inputRelation.id()) ));
+            break;
+            case 2: //relation
+            break;
+        }
+    }
+}
 
-		if( isRestriction && ShouldIgnoreRestriction(except_tag_string) ) {
-			continue;
-		}
-
-		if(isRestriction) {
-			int64_t lastRef = 0;
-			_RawRestrictionContainer currentRestrictionContainer(isOnlyRestriction);
-			for(
-				int rolesIndex = 0, last_role =  inputRelation.roles_sid_size();
-				rolesIndex < last_role;
-				++rolesIndex
-			) {
-				const std::string & role = threadData->PBFprimitiveBlock.stringtable().s( inputRelation.roles_sid( rolesIndex ) );
-				lastRef += inputRelation.memids(rolesIndex);
-
-				if(!("from" == role || "to" == role || "via" == role)) {
-					continue;
-				}
-
-				switch(inputRelation.types(rolesIndex)) {
-				case 0: //node
-					if("from" == role || "to" == role) { //Only via should be a node
-						continue;
-					}
-					assert("via" == role);
-					if(UINT_MAX != currentRestrictionContainer.viaNode) {
-						currentRestrictionContainer.viaNode = UINT_MAX;
-					}
-					assert(UINT_MAX == currentRestrictionContainer.viaNode);
-					currentRestrictionContainer.restriction.viaNode = lastRef;
-					break;
-				case 1: //way
-					assert("from" == role || "to" == role || "via" == role);
-					if("from" == role) {
-						currentRestrictionContainer.fromWay = lastRef;
-					}
-					if ("to" == role) {
-						currentRestrictionContainer.toWay = lastRef;
-					}
-					if ("via" == role) {
-						assert(currentRestrictionContainer.restriction.toNode == UINT_MAX);
-						currentRestrictionContainer.viaNode = lastRef;
-					}
-					break;
-				case 2: //relation, not used. relations relating to relations are evil.
-					continue;
-					assert(false);
-					break;
-
-				default: //should not happen
-					assert(false);
-					break;
-				}
-			}
-			if(!extractor_callbacks->restrictionFunction(currentRestrictionContainer)) {
-				std::cerr << "[PBFParser] relation not parsed" << std::endl;
-			}
-		}
-	}
+inline void PBFParser::parseRelation(_ThreadData * threadData) {
+    //TODO: leave early, if relation is not a restriction
+    //TODO: reuse rawRestriction container
+    const OSMPBF::PrimitiveGroup& group = threadData->PBFprimitiveBlock.primitivegroup( threadData->currentGroupID );
+    for(int i = 0; i < group.relations_size(); ++i ) {
+        const OSMPBF::Relation& inputRelation = threadData->PBFprimitiveBlock.primitivegroup( threadData->currentGroupID ).relations(i);
+        for(int k = 0, endOfKeys = inputRelation.keys_size(); k < endOfKeys; ++k) {
+            const std::string & key = threadData->PBFprimitiveBlock.stringtable().s(inputRelation.keys(k));
+            const std::string & val = threadData->PBFprimitiveBlock.stringtable().s(inputRelation.vals(k));
+            if ("type" == key) {
+                if( "restriction" == val) {
+                    if( use_turn_restrictions ) {
+                        parseRestriction( threadData, inputRelation );
+                    }
+                }
+                else if("route" == val) {
+                    parseRoute( threadData, inputRelation );
+                }
+            }
+        }
+    }
 }
 
 inline void PBFParser::parseWay(_ThreadData * threadData) {
@@ -323,7 +390,8 @@ inline void PBFParser::parseWay(_ThreadData * threadData) {
 		if(2 > w.path.size()) {
         	continue;
     	}
-	    ParseWayInLua( w, scriptingEnvironment.getLuaStateForThreadID( omp_get_thread_num()) );
+        LuaRouteIterator routes( w, wayToRouteMap, routeMap );
+	    ParseWayInLua( w, routes, scriptingEnvironment.getLuaStateForThreadID( omp_get_thread_num()) );
 	}
 
 	BOOST_FOREACH(ExtractionWay & w, parsed_way_vector) {

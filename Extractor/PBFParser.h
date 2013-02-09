@@ -43,6 +43,12 @@
 
 class PBFParser : public BaseParser {
 
+    enum ParsingStep {
+        eUndefined,
+        eRelations,
+        eOther
+    };
+
     enum EntityType {
         TypeDummy     = 0,
         TypeNode      = 1,
@@ -74,11 +80,16 @@ public:
 
 private:
     inline void ReadData();
+    inline void CleanQueue();
     inline void ParseData();
-    inline void parseDenseNode  (_ThreadData * threadData);
-    inline void parseNode       (_ThreadData * threadData);
-    inline void parseRelation   (_ThreadData * threadData);
-    inline void parseWay        (_ThreadData * threadData);
+
+    inline void ParseStep(ParsingStep step);
+    inline void parseDenseNode(_ThreadData * threadData);
+    inline void parseNode(_ThreadData * );
+    inline void parseRelation(_ThreadData * threadData);
+    inline void parseRestriction(_ThreadData* threadData, const OSMPBF::Relation& inputRelation);
+    inline void parseRoute(_ThreadData* threadData, const OSMPBF::Relation& inputRelation);
+    inline void parseWay(_ThreadData * threadData);
 
     inline void loadGroup       (_ThreadData * threadData);
     inline void loadBlock       (_ThreadData * threadData);
@@ -100,6 +111,9 @@ private:
 
     std::fstream input;     // the input stream to parse
     boost::shared_ptr<ConcurrentQueue < _ThreadData* > > threadDataQueue;
+
+    std::vector<std::string> restriction_exceptions_vector;
+    ParsingStep parsingStep;
 };
 
 #endif /* PBFPARSER_H_ */

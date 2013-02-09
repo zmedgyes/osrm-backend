@@ -21,10 +21,14 @@ or see http://www.gnu.org/licenses/agpl.txt.
 #include "BaseParser.h"
 
 BaseParser::BaseParser(ExtractorCallbacks* ec, ScriptingEnvironment& se) :
-extractor_callbacks(ec), scriptingEnvironment(se), luaState(NULL), use_turn_restrictions(true) {
-    luaState = se.getLuaStateForThreadID(0);
+extractor_callbacks(ec),
+scriptingEnvironment(se),
+luaState(se.getLuaStateForThreadID(0)),
+use_turn_restrictions(true),
+use_route_relations(false) {
     ReadUseRestrictionsSetting();
     ReadRestrictionExceptions();
+    ReadUseRouteRelationSetting();
 }
 
 void BaseParser::ReadUseRestrictionsSetting() {
@@ -60,6 +64,20 @@ void BaseParser::ReadRestrictionExceptions() {
     }
 }
 
+void BaseParser::ReadUseRouteRelationSetting() {
+    if( 0 != luaL_dostring( luaState, "return use_route_relations\n") ) {
+        SimpleLogger().Write(logWARNING) << lua_tostring( luaState,-1)<< " occured in scripting block";
+    }
+    if( lua_isboolean( luaState, -1) ) {
+        use_route_relations = lua_toboolean(luaState, -1);
+    }
+    if( use_route_relations ) {
+        SimpleLogger().Write() << "Using route relations";
+    } else {
+        SimpleLogger().Write() <<"Ignoring route relations";
+    }
+}
+
 void BaseParser::report_errors(lua_State *L, const int status) const {
     if( 0!=status ) {
         std::cerr << "-- " << lua_tostring(L, -1) << std::endl;
@@ -71,8 +89,8 @@ void BaseParser::ParseNodeInLua(ImportNode& n, lua_State* localLuaState) {
     luabind::call_function<void>( localLuaState, "node_function", boost::ref(n) );
 }
 
-void BaseParser::ParseWayInLua(ExtractionWay& w, lua_State* localLuaState) {
-    luabind::call_function<void>( localLuaState, "way_function", boost::ref(w) );
+void BaseParser::ParseWayInLua(ExtractionWay& w, LuaRouteIterator& routes, lua_State* localLuaState) {
+    luabind::call_function<void>( localLuaState, "way_function", boost::ref(w), boost::ref(routes) );
 }
 
 bool BaseParser::ShouldIgnoreRestriction(const std::string & except_tag_string) const {
