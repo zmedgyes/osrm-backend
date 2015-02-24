@@ -236,4 +236,120 @@ template <typename GraphT> class TarjanSCC
     unsigned get_component_id(const NodeID node) const { return components_index[node]; }
 };
 
+template <typename GraphT> class pearce_scc
+{
+    struct pearce_stack_frame
+    {
+        explicit pearce_stack_frame(NodeID node, NodeID parent) : node(node), parent(parent) {}
+        NodeID node;
+        NodeID parent;
+    };
+
+    std::vector<unsigned> rindex;
+    std::vector<NodeID> component_size_vector;
+    std::shared_ptr<GraphT> m_node_based_graph;
+    // std::unordered_set<NodeID> barrier_node_set;
+    // RestrictionMap m_restriction_map;
+    std::size_t size_one_counter;
+    std::size_t index;
+    std::size_t c;
+
+  public:
+    template <class ContainerT>
+    pearce_scc(std::shared_ptr<GraphT> graph,
+               const RestrictionMap &restrictions,
+               const ContainerT &barrier_node_list)
+        : rindex(graph->GetNumberOfNodes(), 0), m_node_based_graph(graph),
+          /*m_restriction_map(restrictions),*/ size_one_counter(0), index(0),
+          c(graph->GetNumberOfNodes() - 1)
+    {
+        // barrier_node_set.insert(std::begin(barrier_node_list), std::end(barrier_node_list));
+        BOOST_ASSERT(m_node_based_graph->GetNumberOfNodes() > 0);
+    }
+
+    void visit(const NodeID node)
+    {
+        std::stack<pearce_stack_frame> recursion_stack;
+        rindex[node] = index;
+        ++index;
+
+        recursion_stack.emplace(node, node);
+
+        while (!recursion_stack.empty())
+        {
+            const auto v = recursion_stack.top().node;
+            if (rindex[v] == 0)
+            {
+                // before recursion
+                for (auto current_edge = m_node_based_graph->EndEdges(v) - 1;
+                     current_edge >= m_node_based_graph->BeginEdges(v); --current_edge)
+                {
+                }
+            }
+            else
+            {
+                // after recursion
+                auto w = recursion_stack.top().parent;
+                if (rindex[w] < rindex[v])
+                {
+                    // not backtracking at a root node
+                    rindex[v] = rindex[w];
+                    recursion_stack.emplace(v, w);
+                }
+                else
+                {
+                    --index;
+                    while (!recursion_stack.empty() &&
+                           rindex[v] <= rindex[recursion_stack.top().node])
+                    {
+                        w = recursion_stack.top().node;
+                        recursion_stack.pop();
+                        rindex[w] = c;
+                        ++component_size_vector[(m_node_based_graph->GetNumberOfNodes() - 1) - c];
+                        --index;
+                    }
+                    rindex[v] = c;
+                    ++component_size_vector[(m_node_based_graph->GetNumberOfNodes() - 1) - c];
+                    --c;
+                }
+            }
+        }
+    }
+
+    void run()
+    {
+        TIMER_START(SCC_RUN);
+        for (const auto v : osrm::irange(0u, m_node_based_graph->GetNumberOfNodes()))
+        {
+            if (rindex[v] == 0)
+            {
+                visit(v);
+            }
+        }
+
+        TIMER_STOP(SCC_RUN);
+        SimpleLogger().Write() << "SCC run took: " << TIMER_MSEC(SCC_RUN) / 1000. << "s";
+
+        size_one_counter = std::count_if(component_size_vector.begin(), component_size_vector.end(),
+                                         [](unsigned value)
+                                         {
+                                             return 1 == value;
+                                         });
+    }
+
+    std::size_t get_number_of_components() const { return component_size_vector.size(); }
+
+    std::size_t get_size_one_count() const { return size_one_counter; }
+
+    unsigned get_component_size(const NodeID node) const
+    {
+        return component_size_vector[rindex[node]];
+    }
+
+    unsigned get_component_id(const NodeID node) const
+    {
+        return (m_node_based_graph->GetNumberOfNodes() - 1) - rindex[node];
+    }
+};
+
 #endif /* TINY_COMPONENTS_HPP */

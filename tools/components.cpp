@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
 
         RestrictionMap restriction_map(restriction_list);
         auto tarjan =
-            osrm::make_unique<TarjanSCC<TarjanGraph>>(graph, restriction_map, bollard_node_list);
+            osrm::make_unique<pearce_scc<TarjanGraph>>(graph, restriction_map, bollard_node_list);
         tarjan->run();
         SimpleLogger().Write() << "identified: " << tarjan->get_number_of_components()
                                << " many components";
