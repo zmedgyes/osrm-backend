@@ -48,7 +48,7 @@ add_custom_target(FingerPrintConfigure ALL ${CMAKE_COMMAND}
 add_custom_target(tests DEPENDS engine-tests extractor-tests util-tests)
 add_custom_target(benchmarks DEPENDS rtree-bench)
 
-set(BOOST_COMPONENTS date_time filesystem iostreams program_options regex system thread unit_test_framework)
+set(BOOST_COMPONENTS date_time filesystem iostreams program_options regex system thread unit_test_framework timer)
 
 configure_file(
   ${CMAKE_CURRENT_SOURCE_DIR}/include/util/version.hpp.in
@@ -153,7 +153,7 @@ endif()
 
 # Configuring compilers
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wuninitialized -Wunreachable-code -Wstrict-overflow=2 -D_FORTIFY_SOURCE=2 -fPIC")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic -Wuninitialized -Wunreachable-code -Wstrict-overflow=2 -D_FORTIFY_SOURCE=2 -fPIC -fcolor-diagnostics")
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
   set(COLOR_FLAG "-fdiagnostics-color=auto")
   check_cxx_compiler_flag("-fdiagnostics-color=auto" HAS_COLOR_FLAG)
@@ -359,6 +359,9 @@ if(BUILD_TOOLS)
   endif()
   add_executable(osrm-springclean src/tools/springclean.cpp $<TARGET_OBJECTS:UTIL>)
   target_link_libraries(osrm-springclean ${Boost_LIBRARIES})
+
+  add_executable(osrm-isochrone src/tools/isochrone.cpp $<TARGET_OBJECTS:UTIL>)
+  target_link_libraries(osrm-isochrone ${Boost_LIBRARIES} ${TBB_LIBRARIES})
 
   install(TARGETS osrm-io-benchmark DESTINATION bin)
   install(TARGETS osrm-unlock-all DESTINATION bin)
