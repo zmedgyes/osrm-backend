@@ -9,6 +9,16 @@ namespace extractor
 // This is a char instead of a typed enum, so that we can
 // pack it into e.g. a "TravelMode mode : 4" packed bitfield
 using TravelMode = unsigned char;
+
+struct PackedTravelMode
+{
+    TravelMode forward : 4;
+    TravelMode backward : 4;
+};
+// bit-fields are broken on Windows
+#ifndef _MSC_VER
+static_assert(sizeof(PackedTravelMode) == 1, "PackedTravelMode needs to be 1 byte big");
+#endif
 }
 }
 
