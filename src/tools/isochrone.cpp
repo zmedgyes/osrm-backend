@@ -23,6 +23,8 @@
 #include <string>
 #include <vector>
 #include <unordered_set>
+#include <set>
+#include <cstdlib>
 
 namespace osrm
 {
@@ -52,6 +54,7 @@ std::size_t loadGraph(const std::string &path,
                       std::vector<extractor::QueryNode> &coordinate_list,
                       std::vector<SimpleEdge> &graph_edge_list)
 {
+    boost::timer::auto_cpu_timer t(std::cerr, "loadGraph: %ws wall, %us user + %ss system = %ts CPU (%p%)\n");
     std::ifstream input_stream(path, std::ifstream::in | std::ifstream::binary);
     if (!input_stream.is_open())
     {
@@ -93,17 +96,17 @@ std::size_t loadGraph(const std::string &path,
 int main(int argc, char *argv[])
 {
     std::vector<osrm::extractor::QueryNode> coordinate_list;
-    osrm::util::LogPolicy::GetInstance().Unmute();
+    osrm::util::LogPolicy::GetInstance().Mute();
 
     // enable logging
-    if (argc < 2)
+    if (argc < 4)
     {
-        osrm::util::SimpleLogger().Write(logWARNING) << "usage:\n" << argv[0] << " <filename.osrm>";
+        osrm::util::SimpleLogger().Write(logWARNING) << "usage:\n" << argv[0] << " <points|border> <filename.osrm> <radius>";
         return EXIT_FAILURE;
     }
 
     std::vector<osrm::tools::SimpleEdge> graph_edge_list;
-    std::string base(argv[1]);
+    std::string base(argv[2]);
     auto number_of_nodes = osrm::tools::loadGraph(base, coordinate_list, graph_edge_list);
 
     tbb::parallel_sort(graph_edge_list.begin(), graph_edge_list.end());
@@ -114,30 +117,38 @@ int main(int argc, char *argv[])
 
 
     // Set up the datafacade for querying
-    std::unordered_map<std::string, boost::filesystem::path> server_paths;
-    server_paths["base"] = base;
-    osrm::util::populate_base_path(server_paths);
-    osrm::engine::datafacade::InternalDataFacade<osrm::contractor::QueryEdge::EdgeData> datafacade(server_paths);
+    using Datafacade = osrm::engine::datafacade::InternalDataFacade<osrm::contractor::QueryEdge::EdgeData>;
+    std::unique_ptr<Datafacade> datafacade;
+    {
+        boost::timer::auto_cpu_timer t(std::cerr, "datafacade: %ws wall, %us user + %ss system = %ts CPU (%p%)\n");
+        std::unordered_map<std::string, boost::filesystem::path> server_paths;
+        server_paths["base"] = base;
+        osrm::util::populate_base_path(server_paths);
+        datafacade = std::unique_ptr<Datafacade>(new Datafacade(server_paths));
+    }
 
-    //
-    // Find nearest point within 1000m
-    //
-    auto phantomnodes = datafacade.NearestPhantomNodesInRange({static_cast<int>(37.7600 * osrm::COORDINATE_PRECISION), static_cast<int>(-122.4554 * osrm::COORDINATE_PRECISION)}, 1000);
+    const double LON = -122.44202613830566;
+    const double LAT = 37.7785166660836;
+
+    auto phantomnodes = datafacade->NearestPhantomNodes({static_cast<int>(LAT * osrm::COORDINATE_PRECISION), static_cast<int>(LON * osrm::COORDINATE_PRECISION)}, 1);
+
+    std::sort(phantomnodes.begin(), phantomnodes.end(), [&](const osrm::engine::PhantomNodeWithDistance &a, const osrm::engine::PhantomNodeWithDistance &b){ return a.distance > b.distance; });
     auto phantom = phantomnodes[0];
     NodeID source = 0;
-    if (datafacade.EdgeIsCompressed(phantom.phantom_node.forward_node_id))
+
+    if (datafacade->EdgeIsCompressed(phantom.phantom_node.forward_node_id))
     {
         std::vector<NodeID> forward_id_vector;
-        datafacade.GetUncompressedGeometry(phantom.phantom_node.forward_node_id, forward_id_vector);
+        datafacade->GetUncompressedGeometry(phantom.phantom_node.packed_geometry_id, forward_id_vector);
         source = forward_id_vector[phantom.phantom_node.fwd_segment_position];
-        // TODO: initialize the weight using what's remaining on the snapped edge
-        //       unfortunately, that data isn't readily available
-        // startWeight += phantom.forward_weight;  // WRONG: weight is the *start* of the segment, not the end that we want
+    } else {
+        source = phantom.phantom_node.packed_geometry_id;
     }
     //
     // Perform search
     //
     //
+    //std::cerr << "Snapped to  " << coordinate_list[source].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[source].lat / osrm::COORDINATE_PRECISION << std::endl;
     struct HeapData
     {
         NodeID parent;
@@ -152,7 +163,7 @@ int main(int argc, char *argv[])
     heap.Insert(source, -phantom.phantom_node.GetForwardWeightPlusOffset(), source);
 
     // value is in metres
-    const int MAX = 20800;
+    const int MAX = std::atoi(argv[3]);
 
     std::cout << std::setprecision(8);
 
@@ -161,7 +172,7 @@ int main(int argc, char *argv[])
     std::vector<NodeID> border;
 
     {
-        boost::timer::auto_cpu_timer t;
+        boost::timer::auto_cpu_timer t(std::cerr, "dijkstra: %ws wall, %us user + %ss system = %ts CPU (%p%)\n");
         // Standard Dijkstra search, terminating when path length > MAX
         while (!heap.Empty()) {
             const NodeID source = heap.DeleteMin();
@@ -190,13 +201,30 @@ int main(int argc, char *argv[])
         }
     }
 
+    std::cout << "{\"type\":\"FeatureCollection\",\"features\":[\n";
+
+    if (std::string(argv[1]) == "points") 
     {
-        boost::timer::auto_cpu_timer t;
+        bool first = true;
+        for (auto p : insidepoints)
+        {
+            if (!first) std::cout << ",\n";
+            std::cout << "{\"type\":\"Feature\",\"properties\":{},\"geometry\":{\"type\":\"Point\",\"coordinates\":[";
+            std::cout << coordinate_list[p].lon / osrm::COORDINATE_PRECISION << ", " << coordinate_list[p].lat / osrm::COORDINATE_PRECISION;
+            std::cout << "]}}";
+            first = false;
+        }
+        std::cout << "\n";
+    }
+
+    if (std::string(argv[1]) == "border")
+    {
+        boost::timer::auto_cpu_timer t(std::cerr, "border: %ws wall, %us user + %ss system = %ts CPU (%p%)\n");
 
         NodeID startnode = SPECIAL_NODEID;
 
         // Find the north-west most edge node
-        for (const auto node_id : edgepoints)
+        for (const auto node_id : insidepoints)
         {
             if (startnode == SPECIAL_NODEID) 
             {
@@ -216,12 +244,14 @@ int main(int argc, char *argv[])
 
             }
         }
-        std::cout << "Start node is " << startnode << " at " << coordinate_list[startnode].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[startnode].lat / osrm::COORDINATE_PRECISION << std::endl;
+        //std::cerr << "Start node is " << startnode << " at " << coordinate_list[startnode].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[startnode].lat / osrm::COORDINATE_PRECISION << std::endl;
+
 
         NodeID node_u = startnode;
+        border.push_back(node_u);
 
-        // Find the outgoing edge with the angle closest to 0 (because we're at the west-most node,
-        // there should be no edges with angles < 0)
+        // Find the outgoing edge with the angle closest to 180 (because we're at the west-most node,
+        // there should be no edges with angles < 0 or > 180)
         NodeID node_v = SPECIAL_NODEID;
         for (const auto current_edge : graph->GetAdjacentEdgeRange(node_u)) {
             const auto target = graph->GetTarget(current_edge);
@@ -234,7 +264,7 @@ int main(int argc, char *argv[])
                     if (
                         osrm::util::coordinate_calculation::bearing(
                             coordinate_list[node_u],
-                            coordinate_list[target]) <
+                            coordinate_list[target]) >
                         osrm::util::coordinate_calculation::bearing(
                             coordinate_list[node_u],
                             coordinate_list[node_v]))
@@ -242,99 +272,67 @@ int main(int argc, char *argv[])
                         node_v = target;
                     }
                 }
+                BOOST_ASSERT( 0 <= osrm::util::coordinate_calculation::bearing(coordinate_list[node_u], coordinate_list[node_v]));
+                BOOST_ASSERT( 180 >= osrm::util::coordinate_calculation::bearing(coordinate_list[node_u], coordinate_list[node_v]));
             }
         }
-        std::cout << "Next node is " << node_v << " at " << coordinate_list[node_v].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[node_v].lat / osrm::COORDINATE_PRECISION << " at bearing " << osrm::util::coordinate_calculation::bearing(
-                            coordinate_list[node_u],
-                            coordinate_list[node_v]) << std::endl;
-        std::cout << "{\"type\":\"Feature\",\"properties\":{},\"geometry\":{\"type\":\"LineString\",\"coordinates\":";
-        std::cout << "[[" << coordinate_list[node_u].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[node_u].lat / osrm::COORDINATE_PRECISION << "],";
-        std::cout << "[" << coordinate_list[node_v].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[node_v].lat / osrm::COORDINATE_PRECISION << "]]}},\n";
+        //std::cerr << "Next node is " << node_v << " at " << coordinate_list[node_v].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[node_v].lat / osrm::COORDINATE_PRECISION << " at bearing " << osrm::util::coordinate_calculation::bearing( coordinate_list[node_u], coordinate_list[node_v]) << std::endl;
+        //std::cout << "{\"type\":\"Feature\",\"properties\":{},\"geometry\":{\"type\":\"LineString\",\"coordinates\":";
+        //std::cout << "[[" << coordinate_list[node_u].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[node_u].lat / osrm::COORDINATE_PRECISION << "],";
+        //std::cout << "[" << coordinate_list[node_v].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[node_v].lat / osrm::COORDINATE_PRECISION << "]]}}";
+
+        border.push_back(node_v);
         
-        // Now, repeatedly find the edge with the smallest angle (left turn)
-        // until we get back to the start node
-        while (node_v != startnode) {
+        // Now, we're going to always turn right (relative to the last edge)
+        // only onto nodes that are onthe inside point set
+        NodeID firsttarget = node_v;
+        while (true) {
             NodeID node_w = SPECIAL_NODEID;
-            //std::cout << "Examining " << node_v << std::endl;
+            double best_angle = 361.0;
             for (const auto current_edge : graph->GetAdjacentEdgeRange(node_v)) {
                 const auto target = graph->GetTarget(current_edge);
-                //std::cout << "  Candidate is " << target;
-                if (target == node_u) {
-                    //std::cout << " this is the parent\n";
-                    continue;
-                }
-                if (target == SPECIAL_NODEID) {
-                    //std::cout << " is SPECIAL_NODEID\n";
-                    continue;
-                }
-                if (insidepoints.find(target) == insidepoints.end()) {
-                    //std::cout << " is not in our search points\n";
-                    continue;
-                }
+                if (target == SPECIAL_NODEID) continue;
+                if (insidepoints.find(target) == insidepoints.end()) continue;
 
-                if (target != SPECIAL_NODEID && target != node_u && insidepoints.find(target) != insidepoints.end()) {
-                    if (node_w == SPECIAL_NODEID)
-                    {
-                        node_w = target;
-                    }
-                    else
-                    {
-                        /*
-                        std::cout << "Bearing to candidate is " << osrm::util::coordinate_calculation::computeAngle(
-                                    coordinate_list[node_u],
-                                    coordinate_list[node_v],
-                                    coordinate_list[target]) << std::endl;
-                                    */
-                        if( osrm::util::coordinate_calculation::computeAngle(
-                                    coordinate_list[node_u],
-                                    coordinate_list[node_v],
-                                    coordinate_list[target]) >
-                            osrm::util::coordinate_calculation::computeAngle(
-                                    coordinate_list[node_u],
-                                    coordinate_list[node_v],
-                                    coordinate_list[node_w]))
-                        {
-                            node_w = target;
-                        }
-                    }
+                auto angle = osrm::util::coordinate_calculation::computeAngle(
+                                         coordinate_list[node_u],
+                                         coordinate_list[node_v],
+                                         coordinate_list[target]);
+                if (node_w == SPECIAL_NODEID || angle > best_angle)
+                {
+                    node_w = target;
+                    best_angle = angle;
                 }
             }
             if (node_w == SPECIAL_NODEID) {
-                //std::cout << "Couldn't find an edge inside" << std::endl;
-                node_w = node_u;
-                //return EXIT_FAILURE;
+                std::cerr << "Couldn't find an edge inside" << std::endl;
+                return EXIT_FAILURE;
+            }
+
+            if (firsttarget == node_w && startnode == node_v)
+            {
+                // Here, we've looped all the way around the outside and we've traversed
+                // the first segment again.  Break!
+                break;
             }
             border.push_back(node_w);
+
             node_u = node_v;
             node_v = node_w;
-//            std::cout << "{\"type\":\"Feature\",\"properties\":{},\"geometry\":{\"type\":\"LineString\",\"coordinates\":";
-//            std::cout << "[[" << coordinate_list[node_u].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[node_u].lat / osrm::COORDINATE_PRECISION << "],";
-//            std::cout << "[" << coordinate_list[node_v].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[node_v].lat / osrm::COORDINATE_PRECISION << "]]}},\n";
         }
+
+        std::cout << "{\"type\":\"Feature\",\"properties\":{},\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[";
+        bool first = true;
+        for (auto n : border) {
+            if (!first) std::cout << ",\n";
+            std::cout << "[" << coordinate_list[n].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[n].lat / osrm::COORDINATE_PRECISION << "]";
+            first = false;
+        }
+        std::cout << "]]}}";
+        std::cout << "\n";
     }
 
-    {
-        boost::timer::auto_cpu_timer t;
-        for (const auto node_id : border)
-        {
-//            std::cout << coordinate_list[node_id].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[node_id].lat / osrm::COORDINATE_PRECISION << "," << heap.GetKey(node_id) << "\n";
-        }
-    }
-    
-    /*
-    {
-        boost::timer::auto_cpu_timer t;
-        std::cout << std::setprecision(8);
-        //std::cout << "{ \"type\": \"Feature\",\"properties\":{},\"geometry\":{\"type\":\"Point\", \"coordinates\":[" 
-        //    << -122.4554 << "," << 37.7600 << "]}},\n";
-        // Now, dump all the edge points
-        std::cout << "lon,lat,dist\n";
-        for (const auto node_id : insidepoints)
-        {
-            std::cout << coordinate_list[node_id].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[node_id].lat / osrm::COORDINATE_PRECISION << "," << heap.GetKey(node_id) << "\n";
-        }
-    }
-    */
+    std::cout << "]}\n";
 
     return EXIT_SUCCESS;
 }
