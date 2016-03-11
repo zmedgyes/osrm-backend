@@ -26,6 +26,10 @@
 #include <set>
 #include <cstdlib>
 
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/geometries.hpp>
+
 namespace osrm
 {
 namespace tools
@@ -321,13 +325,47 @@ int main(int argc, char *argv[])
             node_v = node_w;
         }
 
-        std::cout << "{\"type\":\"Feature\",\"properties\":{},\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[";
-        bool first = true;
+        typedef double coordinate_type;
+        typedef boost::geometry::model::d2::point_xy<coordinate_type> point;
+        typedef boost::geometry::model::polygon<point> polygon;
+
+        // Declare strategies
+        const double buffer_distance = 0.0001 * osrm::COORDINATE_PRECISION;
+        const int points_per_circle = 36;
+        boost::geometry::strategy::buffer::distance_symmetric<coordinate_type> distance_strategy(buffer_distance);
+        boost::geometry::strategy::buffer::join_round join_strategy(points_per_circle);
+        boost::geometry::strategy::buffer::end_round end_strategy(points_per_circle);
+        boost::geometry::strategy::buffer::point_circle circle_strategy(points_per_circle);
+        boost::geometry::strategy::buffer::side_straight side_strategy;
+
+        // Declare output
+        boost::geometry::model::multi_polygon<polygon> buffered;
+        polygon unbuffered;
+        
         for (auto n : border) {
-            if (!first) std::cout << ",\n";
-            std::cout << "[" << coordinate_list[n].lon / osrm::COORDINATE_PRECISION << "," << coordinate_list[n].lat / osrm::COORDINATE_PRECISION << "]";
-            first = false;
+            boost::geometry::append(unbuffered.outer(), point(coordinate_list[n].lon, coordinate_list[n].lat));
         }
+
+        // Buffer the shape
+        boost::geometry::buffer(unbuffered, buffered,
+                distance_strategy, side_strategy,
+                join_strategy, end_strategy, circle_strategy);
+
+
+        std::cout << "{\"type\":\"Feature\",\"properties\":{},\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[";
+
+        bool first = true;
+        for (auto & p : buffered) {
+            auto iter = boost::begin(p.outer());
+            while (iter != boost::end(p.outer()))
+            {
+                if (!first) std::cout << ",\n";
+                std::cout << "[" << (*iter).x() / osrm::COORDINATE_PRECISION << "," << (*iter).y() / osrm::COORDINATE_PRECISION << "]";
+                iter++;
+                first = false;
+            }
+        }
+
         std::cout << "]]}}";
         std::cout << "\n";
     }
