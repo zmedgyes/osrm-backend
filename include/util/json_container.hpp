@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <variant/variant.hpp>
 
-#include <vector>
+#include <list>
 #include <string>
 #include <utility>
 #include <unordered_map>
@@ -144,7 +144,7 @@ struct Object
  */
 struct Array
 {
-    std::vector<Value> values;
+    std::list<Value> values;
 };
 
 } // namespace json

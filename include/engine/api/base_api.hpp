@@ -33,8 +33,7 @@ class BaseAPI
         BOOST_ASSERT(parameters.coordinates.size() == segment_end_coordinates.size() + 1);
 
         util::json::Array waypoints;
-        waypoints.values.resize(parameters.coordinates.size());
-        waypoints.values[0] = MakeWaypoint(segment_end_coordinates.front().source_phantom);
+        waypoints.values.push_back(MakeWaypoint(segment_end_coordinates.front().source_phantom));
 
         auto out_iter = std::next(waypoints.values.begin());
         boost::range::transform(segment_end_coordinates, out_iter,

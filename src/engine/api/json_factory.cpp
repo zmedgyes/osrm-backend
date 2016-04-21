@@ -208,7 +208,6 @@ util::json::Array makeRouteLegs(std::vector<guidance::RouteLeg> legs,
     {
         auto leg = std::move(legs[idx]);
         util::json::Array json_steps;
-        json_steps.values.reserve(leg.steps.size());
         std::transform(
             std::make_move_iterator(leg.steps.begin()), std::make_move_iterator(leg.steps.end()),
             std::back_inserter(json_steps.values), [&step_geometry_iter](guidance::RouteStep step) {

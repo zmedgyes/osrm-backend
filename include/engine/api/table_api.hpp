@@ -75,7 +75,6 @@ class TableAPI final : public BaseAPI
     virtual util::json::Array MakeWaypoints(const std::vector<PhantomNode> &phantoms) const
     {
         util::json::Array json_waypoints;
-        json_waypoints.values.reserve(phantoms.size());
         BOOST_ASSERT(phantoms.size() == parameters.coordinates.size());
 
         boost::range::transform(phantoms, std::back_inserter(json_waypoints.values),
@@ -90,7 +89,6 @@ class TableAPI final : public BaseAPI
                                             const std::vector<std::size_t> &indices) const
     {
         util::json::Array json_waypoints;
-        json_waypoints.values.reserve(indices.size());
         boost::range::transform(indices, std::back_inserter(json_waypoints.values),
                                 [this, phantoms](const std::size_t idx)
                                 {

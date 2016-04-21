@@ -7,7 +7,6 @@
 #include "util/coordinate_calculation.hpp"
 #include "util/integer_range.hpp"
 #include "util/json_logger.hpp"
-#include "util/json_util.hpp"
 #include "util/string_util.hpp"
 
 #include <cstdlib>

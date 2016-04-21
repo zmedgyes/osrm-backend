@@ -30,9 +30,7 @@ class MatchAPI final : public RouteAPI
                       const std::vector<InternalRouteResult> &sub_routes,
                       util::json::Object &response) const
     {
-        auto number_of_routes = sub_matchings.size();
         util::json::Array routes;
-        routes.values.reserve(number_of_routes);
         BOOST_ASSERT(sub_matchings.size() == sub_routes.size());
         for (auto index : util::irange<std::size_t>(0UL, sub_matchings.size()))
         {
@@ -58,7 +56,6 @@ class MatchAPI final : public RouteAPI
     MakeTracepoints(const std::vector<map_matching::SubMatching> &sub_matchings) const
     {
         util::json::Array waypoints;
-        waypoints.values.reserve(parameters.coordinates.size());
 
         struct MatchingIndex
         {

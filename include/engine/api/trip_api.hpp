@@ -30,9 +30,7 @@ class TripAPI final : public RouteAPI
                       const std::vector<PhantomNode> &phantoms,
                       util::json::Object &response) const
     {
-        auto number_of_routes = sub_trips.size();
         util::json::Array routes;
-        routes.values.reserve(number_of_routes);
         BOOST_ASSERT(sub_trips.size() == sub_routes.size());
         for (auto index : util::irange<std::size_t>(0UL, sub_trips.size()))
         {
@@ -56,7 +54,6 @@ class TripAPI final : public RouteAPI
                                     const std::vector<PhantomNode> &phantoms) const
     {
         util::json::Array waypoints;
-        waypoints.values.reserve(parameters.coordinates.size());
 
         struct TripIndex
         {

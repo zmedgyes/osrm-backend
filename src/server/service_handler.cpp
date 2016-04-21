@@ -8,7 +8,7 @@
 #include "server/service/tile_service.hpp"
 
 #include "server/api/parsed_url.hpp"
-#include "util/json_util.hpp"
+#include "util/json_container.hpp"
 #include "util/make_unique.hpp"
 
 namespace osrm
