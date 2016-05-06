@@ -1,0 +1,17 @@
+machine:
+    xcode: 7.3
+    node:
+        version: '4.4.2'
+dependencies:
+    pre:
+        - brew install cmake libzip libstxxl lua51 luabind tbb md5sha1sum ccache
+        - pushd build
+        - cmake .. -G Xcode
+        - make -j3
+        - popd
+
+    post:
+        - rm -rf ~/node_modules
+test:
+    override:
+        - npm test
