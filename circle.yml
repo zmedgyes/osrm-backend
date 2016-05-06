@@ -1,5 +1,6 @@
 machine:
-    xcode: 7.3
+    xcode:
+        version: 7.3
     node:
         version: '4.4.2'
 dependencies:
