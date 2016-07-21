@@ -322,112 +322,9 @@ class GraphContractor
         std::cout << "preprocessing " << number_of_nodes << " nodes ..." << std::flush;
 
         unsigned current_level = 0;
-        bool flushed_contractor = false;
         while (number_of_nodes > 2 &&
                number_of_contracted_nodes < static_cast<NodeID>(number_of_nodes * core_factor))
         {
-            if (!flushed_contractor && (number_of_contracted_nodes >
-                                        static_cast<NodeID>(number_of_nodes * 0.65 * core_factor)))
-            {
-                util::DeallocatingVector<ContractorEdge>
-                    new_edge_set; // this one is not explicitely
-                                  // cleared since it goes out of
-                                  // scope anywa
-                std::cout << " [flush " << number_of_contracted_nodes << " nodes] " << std::flush;
-
-                // Delete old heap data to free memory that we need for the coming operations
-                thread_data_list.data.clear();
-
-                // Create new priority array
-                std::vector<float> new_node_priority(remaining_nodes.size());
-                std::vector<EdgeWeight> new_node_weights(remaining_nodes.size());
-                // this map gives the old IDs from the new ones, necessary to get a consistent graph
-                // at the end of contraction
-                orig_node_id_from_new_node_id_map.resize(remaining_nodes.size());
-                // this map gives the new IDs from the old ones, necessary to remap targets from the
-                // remaining graph
-                std::vector<NodeID> new_node_id_from_orig_id_map(number_of_nodes, SPECIAL_NODEID);
-
-                for (const auto new_node_id :
-                     util::irange<std::size_t>(0UL, remaining_nodes.size()))
-                {
-                    auto &node = remaining_nodes[new_node_id];
-                    BOOST_ASSERT(node_priorities.size() > node.id);
-                    new_node_priority[new_node_id] = node_priorities[node.id];
-                    BOOST_ASSERT(node_weights.size() > node.id);
-                    new_node_weights[new_node_id] = node_weights[node.id];
-                }
-
-                // build forward and backward renumbering map and remap ids in remaining_nodes
-                for (const auto new_node_id :
-                     util::irange<std::size_t>(0UL, remaining_nodes.size()))
-                {
-                    auto &node = remaining_nodes[new_node_id];
-                    // create renumbering maps in both directions
-                    orig_node_id_from_new_node_id_map[new_node_id] = node.id;
-                    new_node_id_from_orig_id_map[node.id] = new_node_id;
-                    node.id = new_node_id;
-                }
-                // walk over all nodes
-                for (const auto source :
-                     util::irange<NodeID>(0UL, contractor_graph->GetNumberOfNodes()))
-                {
-                    for (auto current_edge : contractor_graph->GetAdjacentEdgeRange(source))
-                    {
-                        ContractorGraph::EdgeData &data =
-                            contractor_graph->GetEdgeData(current_edge);
-                        const NodeID target = contractor_graph->GetTarget(current_edge);
-                        if (SPECIAL_NODEID == new_node_id_from_orig_id_map[source])
-                        {
-                            external_edge_list.push_back({source, target, data});
-                        }
-                        else
-                        {
-                            // node is not yet contracted.
-                            // add (renumbered) outgoing edges to new util::DynamicGraph.
-                            ContractorEdge new_edge = {new_node_id_from_orig_id_map[source],
-                                                       new_node_id_from_orig_id_map[target],
-                                                       data};
-
-                            new_edge.data.is_original_via_node_ID = true;
-                            BOOST_ASSERT_MSG(SPECIAL_NODEID != new_node_id_from_orig_id_map[source],
-                                             "new source id not resolveable");
-                            BOOST_ASSERT_MSG(SPECIAL_NODEID != new_node_id_from_orig_id_map[target],
-                                             "new target id not resolveable");
-                            new_edge_set.push_back(new_edge);
-                        }
-                    }
-                }
-
-                // Delete map from old NodeIDs to new ones.
-                new_node_id_from_orig_id_map.clear();
-                new_node_id_from_orig_id_map.shrink_to_fit();
-
-                // Replace old priorities array by new one
-                node_priorities.swap(new_node_priority);
-                // Delete old node_priorities vector
-                // Due to the scope, these should get cleared automatically? @daniel-j-h do you
-                // agree?
-                new_node_priority.clear();
-                new_node_priority.shrink_to_fit();
-
-                node_weights.swap(new_node_weights);
-                // old Graph is removed
-                contractor_graph.reset();
-
-                // create new graph
-                tbb::parallel_sort(new_edge_set.begin(), new_edge_set.end());
-                contractor_graph =
-                    std::make_shared<ContractorGraph>(remaining_nodes.size(), new_edge_set);
-
-                new_edge_set.clear();
-                flushed_contractor = true;
-
-                // INFO: MAKE SURE THIS IS THE LAST OPERATION OF THE FLUSH!
-                // reinitialize heaps and ThreadData objects with appropriate size
-                thread_data_list.number_of_nodes = contractor_graph->GetNumberOfNodes();
-            }
-
             tbb::parallel_for(
                 tbb::blocked_range<std::size_t>(0, remaining_nodes.size(), IndependentGrainSize),
                 [this, &node_priorities, &remaining_nodes, &thread_data_list](
@@ -457,25 +354,13 @@ class GraphContractor
                 tbb::parallel_for(
                     tbb::blocked_range<std::size_t>(
                         begin_independent_nodes_idx, end_independent_nodes_idx, ContractGrainSize),
-                    [this, remaining_nodes, flushed_contractor, current_level](
+                    [this, remaining_nodes, current_level](
                         const tbb::blocked_range<std::size_t> &range) {
-                        if (flushed_contractor)
+                        for (int position = range.begin(), end = range.end(); position != end;
+                             ++position)
                         {
-                            for (int position = range.begin(), end = range.end(); position != end;
-                                 ++position)
-                            {
-                                const NodeID x = remaining_nodes[position].id;
-                                node_levels[orig_node_id_from_new_node_id_map[x]] = current_level;
-                            }
-                        }
-                        else
-                        {
-                            for (int position = range.begin(), end = range.end(); position != end;
-                                 ++position)
-                            {
-                                const NodeID x = remaining_nodes[position].id;
-                                node_levels[x] = current_level;
-                            }
+                            const NodeID x = remaining_nodes[position].id;
+                            node_levels[x] = current_level;
                         }
                     });
             }
@@ -570,29 +455,14 @@ class GraphContractor
 
         if (remaining_nodes.size() > 2)
         {
-            if (orig_node_id_from_new_node_id_map.size() > 0)
-            {
-                tbb::parallel_for(tbb::blocked_range<int>(0, remaining_nodes.size(), InitGrainSize),
-                                  [this, &remaining_nodes](const tbb::blocked_range<int> &range) {
-                                      for (int x = range.begin(), end = range.end(); x != end; ++x)
-                                      {
-                                          const auto orig_id = remaining_nodes[x].id;
-                                          is_core_node[orig_node_id_from_new_node_id_map[orig_id]] =
-                                              true;
-                                      }
-                                  });
-            }
-            else
-            {
-                tbb::parallel_for(tbb::blocked_range<int>(0, remaining_nodes.size(), InitGrainSize),
-                                  [this, &remaining_nodes](const tbb::blocked_range<int> &range) {
-                                      for (int x = range.begin(), end = range.end(); x != end; ++x)
-                                      {
-                                          const auto orig_id = remaining_nodes[x].id;
-                                          is_core_node[orig_id] = true;
-                                      }
-                                  });
-            }
+              tbb::parallel_for(tbb::blocked_range<int>(0, remaining_nodes.size(), InitGrainSize),
+                                [this, &remaining_nodes](const tbb::blocked_range<int> &range) {
+                                    for (int x = range.begin(), end = range.end(); x != end; ++x)
+                                    {
+                                        const auto orig_id = remaining_nodes[x].id;
+                                        is_core_node[orig_id] = true;
+                                    }
+                                });
         }
         else
         {
@@ -633,29 +503,13 @@ class GraphContractor
                 {
                     const NodeID target = contractor_graph->GetTarget(edge);
                     const ContractorGraph::EdgeData &data = contractor_graph->GetEdgeData(edge);
-                    if (!orig_node_id_from_new_node_id_map.empty())
-                    {
-                        new_edge.source = orig_node_id_from_new_node_id_map[node];
-                        new_edge.target = orig_node_id_from_new_node_id_map[target];
-                    }
-                    else
-                    {
-                        new_edge.source = node;
-                        new_edge.target = target;
-                    }
+                    new_edge.source = node;
+                    new_edge.target = target;
                     BOOST_ASSERT_MSG(SPECIAL_NODEID != new_edge.source, "Source id invalid");
                     BOOST_ASSERT_MSG(SPECIAL_NODEID != new_edge.target, "Target id invalid");
                     new_edge.data.distance = data.distance;
                     new_edge.data.shortcut = data.shortcut;
-                    if (!data.is_original_via_node_ID && !orig_node_id_from_new_node_id_map.empty())
-                    {
-                        // tranlate the _node id_ of the shortcutted node
-                        new_edge.data.id = orig_node_id_from_new_node_id_map[data.id];
-                    }
-                    else
-                    {
-                        new_edge.data.id = data.id;
-                    }
+                    new_edge.data.id = data.id;
                     BOOST_ASSERT_MSG(new_edge.data.id != INT_MAX, // 2^31
                                      "edge id invalid");
                     new_edge.data.forward = data.forward;
@@ -665,13 +519,6 @@ class GraphContractor
             }
         }
         contractor_graph.reset();
-        orig_node_id_from_new_node_id_map.clear();
-        orig_node_id_from_new_node_id_map.shrink_to_fit();
-
-        BOOST_ASSERT(0 == orig_node_id_from_new_node_id_map.capacity());
-
-        edges.append(external_edge_list.begin(), external_edge_list.end());
-        external_edge_list.clear();
     }
 
   private:
@@ -1105,8 +952,6 @@ class GraphContractor
     }
 
     std::shared_ptr<ContractorGraph> contractor_graph;
-    stxxl::vector<QueryEdge> external_edge_list;
-    std::vector<NodeID> orig_node_id_from_new_node_id_map;
     std::vector<float> node_levels;
 
     // A list of weights for every node in the graph.
