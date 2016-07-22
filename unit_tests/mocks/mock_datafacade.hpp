@@ -65,18 +65,32 @@ class MockDataFacade final : public engine::datafacade::BaseDataFacade
     {
         return SPECIAL_NODEID;
     }
-    void GetUncompressedGeometry(const EdgeID /* id */,
+    void GetUncompressedForwardGeometry(const EdgeID /* id */,
                                  std::vector<NodeID> & /* result_nodes */) const override
     {
     }
-    void GetUncompressedWeights(const EdgeID /* id */,
+    void GetUncompressedReverseGeometry(const EdgeID /* id */,
+                                 std::vector<NodeID> & /* result_nodes */) const override
+    {
+    }
+    void GetUncompressedForwardWeights(const EdgeID /* id */,
+                                std::vector<EdgeWeight> & result_weights) const override
+    {
+        result_weights.resize(1);
+        result_weights[0] = 1;
+    }
+    void GetUncompressedReverseWeights(const EdgeID /* id */,
                                 std::vector<EdgeWeight> &result_weights) const override
     {
         result_weights.resize(1);
         result_weights[0] = 1;
     }
-    void GetUncompressedDatasources(const EdgeID /*id*/,
-                                    std::vector<uint8_t> & /*data_sources*/) const override
+    void GetUncompressedForwardDatasources(const EdgeID /*id*/,
+                                           std::vector<uint8_t> & /*data_sources*/) const override
+    {
+    }
+    void GetUncompressedReverseDatasources(const EdgeID /*id*/,
+                                           std::vector<uint8_t> & /*data_sources*/) const override
     {
     }
     std::string GetDatasourceName(const uint8_t /*datasource_name_id*/) const override

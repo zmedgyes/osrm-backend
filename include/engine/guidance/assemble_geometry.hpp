@@ -46,13 +46,13 @@ inline LegGeometry assembleGeometry(const datafacade::BaseDataFacade &facade,
     // Need to get the node ID preceding the source phantom node
     // TODO: check if this was traversed in reverse?
     std::vector<NodeID> reverse_geometry;
-    facade.GetUncompressedGeometry(source_node.reverse_packed_geometry_id, reverse_geometry);
+    facade.GetUncompressedReverseGeometry(source_node.packed_geometry_id, reverse_geometry);
     geometry.osm_node_ids.push_back(facade.GetOSMNodeIDOfNode(
         reverse_geometry[reverse_geometry.size() - source_node.fwd_segment_position - 1]));
 
     std::vector<uint8_t> forward_datasource_vector;
-    facade.GetUncompressedDatasources(source_node.forward_packed_geometry_id,
-                                      forward_datasource_vector);
+    facade.GetUncompressedForwardDatasources(source_node.packed_geometry_id,
+                                             forward_datasource_vector);
 
     auto cumulative_distance = 0.;
     auto current_distance = 0.;
@@ -85,7 +85,7 @@ inline LegGeometry assembleGeometry(const datafacade::BaseDataFacade &facade,
     geometry.segment_distances.push_back(cumulative_distance);
 
     std::vector<DatasourceID> forward_datasources;
-    facade.GetUncompressedDatasources(target_node.forward_packed_geometry_id, forward_datasources);
+    facade.GetUncompressedForwardDatasources(target_node.packed_geometry_id, forward_datasources);
 
     geometry.annotations.emplace_back(
         LegGeometry::Annotation{current_distance,
@@ -97,7 +97,7 @@ inline LegGeometry assembleGeometry(const datafacade::BaseDataFacade &facade,
     // Need to get the node ID following the destination phantom node
     // TODO: check if this was traversed in reverse??
     std::vector<NodeID> forward_geometry;
-    facade.GetUncompressedGeometry(target_node.forward_packed_geometry_id, forward_geometry);
+    facade.GetUncompressedForwardGeometry(target_node.packed_geometry_id, forward_geometry);
     geometry.osm_node_ids.push_back(
         facade.GetOSMNodeIDOfNode(forward_geometry[target_node.fwd_segment_position]));
 
