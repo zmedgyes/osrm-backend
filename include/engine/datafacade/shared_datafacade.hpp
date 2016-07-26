@@ -545,12 +545,12 @@ class SharedDataFacade final : public BaseDataFacade
     GetUncompressedReverseGeometry(const EdgeID id,
                                    std::vector<NodeID> &result_nodes) const override final
     {
-        const unsigned begin = m_geometry_indices.at(id) - 1;
-        const unsigned end = m_geometry_indices.at(id + 1) - 2;
+        const signed begin = m_geometry_indices.at(id) - 1;
+        const signed end = m_geometry_indices.at(id + 1) - 2;
 
         result_nodes.clear();
         result_nodes.reserve(end - begin);
-        for (std::size_t i = end; i > begin; --i)
+        for (signed i = end; i > begin; --i)
         {
             const osrm::extractor::CompressedEdgeContainer::CompressedEdge &edge =
                 m_geometry_list.at(i);
@@ -579,12 +579,12 @@ class SharedDataFacade final : public BaseDataFacade
     GetUncompressedReverseWeights(const EdgeID id,
                                   std::vector<EdgeWeight> &result_weights) const override final
     {
-        const unsigned begin = m_geometry_indices.at(id) - 1;
-        const unsigned end = m_geometry_indices.at(id + 1) - 2;
+        const signed begin = m_geometry_indices.at(id) - 1;
+        const signed end = m_geometry_indices.at(id + 1) - 2;
 
         result_weights.clear();
         result_weights.reserve(end - begin);
-        for (std::size_t i = end; i > begin; --i)
+        for (signed i = end; i > begin; --i)
         {
             const osrm::extractor::CompressedEdgeContainer::CompressedEdge &edge =
                 m_geometry_list.at(i);
