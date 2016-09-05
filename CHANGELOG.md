@@ -1,3 +1,8 @@
+# 5.3.4
+  Changes from 5.3.3
+    - Bugfixes
+      - BREAKING: Fixed a bug that could crash postprocessing of instructions on invalid roundabout taggings. This change requires reprocessing datasets with osrm-extract and osrm-contract
+
 # 5.3.3
   Changes from 5.3.2
     - Bugfixes
