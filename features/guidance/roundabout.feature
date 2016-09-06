@@ -532,5 +532,5 @@ Feature: Basic Roundabout
             | waypoints | route            | turns                                                   |
             # since we cannot handle these invalid roundabout tags yet, we cannout output roundabout taggings. This will hopefully change some day
             #| w,x       | ll,egg,egg,tr,tr | depart,roundabout-exit-1,roundabout-exit-2,arrive       |
-            | w,x       | ll,egg,egg,tr,tr | depart,turn right,continue left,turn slight left,arrive |
+            | w,x       | ll,egg,tr,tr | depart,turn right,fork slight right,arrive |
 
