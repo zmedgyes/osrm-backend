@@ -40,6 +40,7 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <iostream>
 #include <vector>
 
 #include <boost/assert.hpp>
@@ -728,12 +729,16 @@ class InternalDataFacade final : public BaseDataFacade
         const unsigned begin = m_geometry_indices.at(id) + 1;
         const unsigned end = m_geometry_indices.at(id + 1);
 
+        std::cout << "Edge ID:" << id << std::endl;
+
         result_weights.clear();
         result_weights.reserve(end - begin);
         std::for_each(m_geometry_list.begin() + begin,
                       m_geometry_list.begin() + end,
                       [&](const osrm::extractor::CompressedEdgeContainer::CompressedEdge &edge) {
-                          BOOST_ASSERT(edge.forward_weight != INVALID_EDGE_WEIGHT);
+                          std::cout << "Node ID:" << edge.node_id << std::endl;
+                          std::cout << "forward_weight:" << edge.forward_weight << std::endl;
+                          std::cout << "reverse_weight:" << edge.reverse_weight << std::endl;
                           result_weights.emplace_back(edge.forward_weight);
                       });
     }
@@ -750,7 +755,6 @@ class InternalDataFacade final : public BaseDataFacade
         std::for_each(m_geometry_list.rbegin() + (m_geometry_list.size() - end),
                       m_geometry_list.rbegin() + (m_geometry_list.size() - begin),
                       [&](const osrm::extractor::CompressedEdgeContainer::CompressedEdge &edge) {
-                          BOOST_ASSERT(edge.reverse_weight != INVALID_EDGE_WEIGHT);
                           result_weights.emplace_back(edge.reverse_weight);
                       });
     }
