@@ -24,6 +24,10 @@ struct GeometryID
     {
     }
 
+    GeometryID() : id(std::numeric_limits<unsigned>::max()), forward(false)
+    {
+    }
+
     NodeID id : 31;
     std::uint32_t forward : 1;
 };

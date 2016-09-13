@@ -252,17 +252,17 @@ template <class DataFacadeT, class Derived> class BasicRoutingInterface
                 std::vector<NodeID> id_vector;
                 std::vector<EdgeWeight> weight_vector;
                 std::vector<DatasourceID> datasource_vector;
-                if (start_traversed_in_reverse)
+                if (geometry_index.forward)
                 {
-                    facade->GetUncompressedReverseGeometry(geometry_index, id_vector);
-                    facade->GetUncompressedReverseWeights(geometry_index, weight_vector);
-                    facade->GetUncompressedReverseDatasources(geometry_index, datasource_vector);
+                    facade->GetUncompressedForwardGeometry(geometry_index.id, id_vector);
+                    facade->GetUncompressedForwardWeights(geometry_index.id, weight_vector);
+                    facade->GetUncompressedForwardDatasources(geometry_index.id, datasource_vector);
                 }
                 else
                 {
-                    facade->GetUncompressedForwardGeometry(geometry_index, id_vector);
-                    facade->GetUncompressedForwardWeights(geometry_index, weight_vector);
-                    facade->GetUncompressedForwardDatasources(geometry_index, datasource_vector);
+                    facade->GetUncompressedReverseGeometry(geometry_index.id, id_vector);
+                    facade->GetUncompressedReverseWeights(geometry_index.id, weight_vector);
+                    facade->GetUncompressedReverseDatasources(geometry_index.id, datasource_vector);
                 }
                 BOOST_ASSERT(id_vector.size() > 0);
                 BOOST_ASSERT(weight_vector.size() > 0);
