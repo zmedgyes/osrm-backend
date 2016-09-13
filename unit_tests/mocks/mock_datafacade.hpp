@@ -63,7 +63,7 @@ class MockDataFacade final : public engine::datafacade::BaseDataFacade
     bool EdgeIsCompressed(const unsigned /* id */) const { return false; }
     extractor::GeometryID GetGeometryIndexForEdgeID(const unsigned /* id */) const override
     {
-        return SPECIAL_NODEID;
+        return extractor::GeometryID{SPECIAL_NODEID,false};
     }
     void GetUncompressedForwardGeometry(const EdgeID /* id */,
                                  std::vector<NodeID> & /* result_nodes */) const override
