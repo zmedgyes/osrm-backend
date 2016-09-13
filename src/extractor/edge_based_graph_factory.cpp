@@ -447,7 +447,7 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
 
                 BOOST_ASSERT(m_compressed_edge_container.HasZippedEntryForID(edge_from_u));
                 original_edge_data_vector.emplace_back(
-                    m_compressed_edge_container.GetZippedPositionForID(edge_from_u),
+                    GeometryID{m_compressed_edge_container.GetZippedPositionForID(edge_from_u), node_v > node_u},
                     edge_data1.name_id,
                     turn.lane_data_id,
                     turn_instruction,

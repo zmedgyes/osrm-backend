@@ -5,6 +5,7 @@
 
 #include "contractor/query_edge.hpp"
 #include "extractor/edge_based_node.hpp"
+#include "extractor/original_edge_data.hpp"
 #include "extractor/external_memory_node.hpp"
 #include "extractor/guidance/turn_instruction.hpp"
 #include "extractor/guidance/turn_lane_types.hpp"
@@ -74,7 +75,7 @@ class BaseDataFacade
     virtual util::Coordinate GetCoordinateOfNode(const unsigned id) const = 0;
     virtual OSMNodeID GetOSMNodeIDOfNode(const unsigned id) const = 0;
 
-    virtual unsigned GetGeometryIndexForEdgeID(const unsigned id) const = 0;
+    virtual extractor::GeometryID GetGeometryIndexForEdgeID(const unsigned id) const = 0;
 
     virtual void GetUncompressedForwardGeometry(const EdgeID id,
                                                 std::vector<NodeID> &result_nodes) const = 0;

@@ -40,7 +40,6 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
-#include <iostream>
 #include <vector>
 
 #include <boost/assert.hpp>
@@ -77,7 +76,7 @@ class InternalDataFacade final : public BaseDataFacade
 
     util::ShM<util::Coordinate, false>::vector m_coordinate_list;
     util::PackedVector<OSMNodeID, false> m_osmnodeid_list;
-    util::ShM<NodeID, false>::vector m_via_node_list;
+    util::ShM<extractor::GeometryID, false>::vector m_via_node_list;
     util::ShM<unsigned, false>::vector m_name_ID_list;
     util::ShM<extractor::guidance::TurnInstruction, false>::vector m_turn_instruction_list;
     util::ShM<LaneDataID, false>::vector m_lane_data_id;
@@ -202,7 +201,7 @@ class InternalDataFacade final : public BaseDataFacade
         {
             edges_input_stream.read((char *)&(current_edge_data),
                                     sizeof(extractor::OriginalEdgeData));
-            m_via_node_list[i] = current_edge_data.via_node;
+            m_via_node_list[i] = current_edge_data.via_geometry;
             m_name_ID_list[i] = current_edge_data.name_id;
             m_turn_instruction_list[i] = current_edge_data.turn_instruction;
             m_lane_data_id[i] = current_edge_data.lane_data_id;
@@ -671,7 +670,7 @@ class InternalDataFacade final : public BaseDataFacade
         return GetNameForID(name_id + 1);
     }
 
-    virtual unsigned GetGeometryIndexForEdgeID(const unsigned id) const override final
+    virtual extractor::GeometryID GetGeometryIndexForEdgeID(const unsigned id) const override final
     {
         return m_via_node_list.at(id);
     }
@@ -729,16 +728,11 @@ class InternalDataFacade final : public BaseDataFacade
         const unsigned begin = m_geometry_indices.at(id) + 1;
         const unsigned end = m_geometry_indices.at(id + 1);
 
-        std::cout << "Edge ID:" << id << std::endl;
-
         result_weights.clear();
         result_weights.reserve(end - begin);
         std::for_each(m_geometry_list.begin() + begin,
                       m_geometry_list.begin() + end,
                       [&](const osrm::extractor::CompressedEdgeContainer::CompressedEdge &edge) {
-                          std::cout << "Node ID:" << edge.node_id << std::endl;
-                          std::cout << "forward_weight:" << edge.forward_weight << std::endl;
-                          std::cout << "reverse_weight:" << edge.reverse_weight << std::endl;
                           result_weights.emplace_back(edge.forward_weight);
                       });
     }
