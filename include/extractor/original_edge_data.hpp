@@ -24,7 +24,7 @@ struct GeometryID
     {
     }
 
-    GeometryID() : id(std::numeric_limits<unsigned>::max()), forward(false)
+    GeometryID() : id(std::numeric_limits<unsigned>::max() >> 1), forward(false)
     {
     }
 
@@ -46,7 +46,7 @@ struct OriginalEdgeData
     }
 
     OriginalEdgeData()
-        : via_geometry{std::numeric_limits<unsigned>::max(),false},
+        : via_geometry{std::numeric_limits<unsigned>::max() >> 1,false},
           name_id(std::numeric_limits<unsigned>::max()), entry_classid(INVALID_ENTRY_CLASSID),
           lane_data_id(INVALID_LANE_DATAID), turn_instruction(guidance::TurnInstruction::INVALID()),
           travel_mode(TRAVEL_MODE_INACCESSIBLE)
