@@ -725,48 +725,51 @@ class InternalDataFacade final : public BaseDataFacade
         return result_nodes;
     }
 
-    virtual void
-    GetUncompressedForwardWeights(const EdgeID id,
-                                  std::vector<EdgeWeight> &result_weights) const override final
+    virtual std::vector<EdgeWeight>
+    GetUncompressedForwardWeights(const EdgeID id) const override final
     {
         const unsigned begin = m_geometry_indices.at(id) + 1;
         const unsigned end = m_geometry_indices.at(id + 1);
 
-        result_weights.clear();
+        std::vector<EdgeWeight> result_weights;
         result_weights.reserve(end - begin);
+
         std::for_each(m_geometry_list.begin() + begin,
                       m_geometry_list.begin() + end,
                       [&](const osrm::extractor::CompressedEdgeContainer::CompressedEdge &edge) {
                           result_weights.emplace_back(edge.forward_weight);
                       });
+
+        return result_weights;
     }
 
-    virtual void
-    GetUncompressedReverseWeights(const EdgeID id,
-                                  std::vector<EdgeWeight> &result_weights) const override final
+    virtual std::vector<EdgeWeight>
+    GetUncompressedReverseWeights(const EdgeID id) const override final
     {
         const unsigned begin = m_geometry_indices.at(id);
         const unsigned end = m_geometry_indices.at(id + 1) - 1;
 
-        result_weights.clear();
+        std::vector<EdgeWeight> result_weights;
         result_weights.reserve(end - begin);
+
         std::for_each(m_geometry_list.rbegin() + (m_geometry_list.size() - end),
                       m_geometry_list.rbegin() + (m_geometry_list.size() - begin),
                       [&](const osrm::extractor::CompressedEdgeContainer::CompressedEdge &edge) {
                           result_weights.emplace_back(edge.reverse_weight);
                       });
+
+        return result_weights;
     }
 
     // Returns the data source ids that were used to supply the edge
     // weights.
-    virtual void
-    GetUncompressedForwardDatasources(const EdgeID id,
-                                      std::vector<uint8_t> &result_datasources) const override final
+    virtual std::vector<uint8_t>
+    GetUncompressedForwardDatasources(const EdgeID id) const override final
     {
         const unsigned begin = m_geometry_indices.at(id);
         const unsigned end = m_geometry_indices.at(id + 1);
 
-        result_datasources.clear();
+        std::vector<uint8_t> result_datasources;
         result_datasources.reserve(end - begin);
 
         // If there was no datasource info, return an array of 0's.
@@ -784,18 +787,19 @@ class InternalDataFacade final : public BaseDataFacade
                 m_datasource_list.begin() + end,
                 [&](const uint8_t &datasource_id) { result_datasources.push_back(datasource_id); });
         }
+
+        return result_datasources;
     }
 
     // Returns the data source ids that were used to supply the edge
     // weights.
-    virtual void
-    GetUncompressedReverseDatasources(const EdgeID id,
-                                      std::vector<uint8_t> &result_datasources) const override final
+    virtual std::vector<uint8_t>
+    GetUncompressedReverseDatasources(const EdgeID id) const override final
     {
         const unsigned begin = m_geometry_indices.at(id);
         const unsigned end = m_geometry_indices.at(id + 1) - 1;
 
-        result_datasources.clear();
+        std::vector<uint8_t> result_datasources;
         result_datasources.reserve(end - begin);
 
         // If there was no datasource info, return an array of 0's.
@@ -813,6 +817,8 @@ class InternalDataFacade final : public BaseDataFacade
                 m_datasource_list.rbegin() + (m_datasource_list.size() - begin),
                 [&](const uint8_t &datasource_id) { result_datasources.push_back(datasource_id); });
         }
+
+        return result_datasources;
     }
 
     virtual std::string GetDatasourceName(const uint8_t datasource_name_id) const override final

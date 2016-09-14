@@ -83,18 +83,14 @@ class BaseDataFacade
 
     // Gets the weight values for each segment in an uncompressed geometry.
     // Should always be 1 shorter than GetUncompressedGeometry
-    virtual void GetUncompressedForwardWeights(const EdgeID id,
-                                               std::vector<EdgeWeight> &result_weights) const = 0;
+    virtual std::vector<EdgeWeight> GetUncompressedForwardWeights(const EdgeID id) const = 0;
 
-    virtual void GetUncompressedReverseWeights(const EdgeID id,
-                                               std::vector<EdgeWeight> &result_weights) const = 0;
+    virtual std::vector<EdgeWeight> GetUncompressedReverseWeights(const EdgeID id) const = 0;
 
     // Returns the data source ids that were used to supply the edge
     // weights.  Will return an empty array when only the base profile is used.
-    virtual void GetUncompressedForwardDatasources(const EdgeID id,
-                                                   std::vector<uint8_t> &data_sources) const = 0;
-    virtual void GetUncompressedReverseDatasources(const EdgeID id,
-                                                   std::vector<uint8_t> &data_sources) const = 0;
+    virtual std::vector<uint8_t> GetUncompressedForwardDatasources(const EdgeID id) const = 0;
+    virtual std::vector<uint8_t> GetUncompressedReverseDatasources(const EdgeID id) const = 0;
 
     // Gets the name of a datasource
     virtual std::string GetDatasourceName(const uint8_t datasource_name_id) const = 0;

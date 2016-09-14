@@ -255,14 +255,16 @@ template <class DataFacadeT, class Derived> class BasicRoutingInterface
                 if (geometry_index.forward)
                 {
                     id_vector = facade->GetUncompressedForwardGeometry(geometry_index.id);
-                    facade->GetUncompressedForwardWeights(geometry_index.id, weight_vector);
-                    facade->GetUncompressedForwardDatasources(geometry_index.id, datasource_vector);
+                    weight_vector = facade->GetUncompressedForwardWeights(geometry_index.id);
+                    datasource_vector =
+                        facade->GetUncompressedForwardDatasources(geometry_index.id);
                 }
                 else
                 {
                     id_vector = facade->GetUncompressedReverseGeometry(geometry_index.id);
-                    facade->GetUncompressedReverseWeights(geometry_index.id, weight_vector);
-                    facade->GetUncompressedReverseDatasources(geometry_index.id, datasource_vector);
+                    weight_vector = facade->GetUncompressedReverseWeights(geometry_index.id);
+                    datasource_vector =
+                        facade->GetUncompressedReverseDatasources(geometry_index.id);
                 }
                 BOOST_ASSERT(id_vector.size() > 0);
                 BOOST_ASSERT(weight_vector.size() > 0);
@@ -318,11 +320,11 @@ template <class DataFacadeT, class Derived> class BasicRoutingInterface
             id_vector = facade->GetUncompressedReverseGeometry(
                 phantom_node_pair.target_phantom.packed_geometry_id);
 
-            facade->GetUncompressedReverseWeights(
-                phantom_node_pair.target_phantom.packed_geometry_id, weight_vector);
+            weight_vector = facade->GetUncompressedReverseWeights(
+                phantom_node_pair.target_phantom.packed_geometry_id);
 
-            facade->GetUncompressedReverseDatasources(
-                phantom_node_pair.target_phantom.packed_geometry_id, datasource_vector);
+            datasource_vector = facade->GetUncompressedReverseDatasources(
+                phantom_node_pair.target_phantom.packed_geometry_id);
 
             if (is_local_path)
             {
@@ -342,11 +344,11 @@ template <class DataFacadeT, class Derived> class BasicRoutingInterface
             id_vector = facade->GetUncompressedForwardGeometry(
                 phantom_node_pair.target_phantom.packed_geometry_id);
 
-            facade->GetUncompressedForwardWeights(
-                phantom_node_pair.target_phantom.packed_geometry_id, weight_vector);
+            weight_vector = facade->GetUncompressedForwardWeights(
+                phantom_node_pair.target_phantom.packed_geometry_id);
 
-            facade->GetUncompressedForwardDatasources(
-                phantom_node_pair.target_phantom.packed_geometry_id, datasource_vector);
+            datasource_vector = facade->GetUncompressedForwardDatasources(
+                phantom_node_pair.target_phantom.packed_geometry_id);
         }
 
         // Given the following compressed geometry:

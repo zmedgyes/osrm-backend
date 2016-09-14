@@ -614,16 +614,19 @@ Status TilePlugin::HandleRequest(const api::TileParameters &parameters, std::str
         {
             forward_weight_vector.clear();
             reverse_weight_vector.clear();
+            forward_weight_vector =
+                facade.GetUncompressedForwardWeights(edge.packed_geometry_id);
+            reverse_weight_vector =
+                facade.GetUncompressedReverseWeights(edge.packed_geometry_id);
 
-            facade.GetUncompressedForwardWeights(edge.packed_geometry_id, forward_weight_vector);
             forward_weight = forward_weight_vector[edge.fwd_segment_position];
 
-            facade.GetUncompressedReverseWeights(edge.packed_geometry_id, reverse_weight_vector);
             BOOST_ASSERT(edge.fwd_segment_position < reverse_weight_vector.size());
-            reverse_weight = reverse_weight_vector[reverse_weight_vector.size() - edge.fwd_segment_position - 1];
+            reverse_weight =
+                reverse_weight_vector[reverse_weight_vector.size() - edge.fwd_segment_position - 1];
 
             forward_datasource_vector.clear();
-            facade.GetUncompressedForwardDatasources(edge.packed_geometry_id,
+            forward_datasource_vector = facade.GetUncompressedForwardDatasources(edge.packed_geometry_id,
                                                      forward_datasource_vector);
             forward_datasource = forward_datasource_vector[edge.fwd_segment_position];
 
@@ -640,8 +643,8 @@ Status TilePlugin::HandleRequest(const api::TileParameters &parameters, std::str
             }
             reverse_datasource_vector.clear();
             // TODO have not tested geom zipping with tiles yet
-            facade.GetUncompressedReverseDatasources(edge.packed_geometry_id,
-                                                     reverse_datasource_vector);
+            reverse_datasource_vector =
+                facade.GetUncompressedReverseDatasources(edge.packed_geometry_id);
             reverse_datasource = reverse_datasource_vector[reverse_datasource_vector.size() -
                                                            edge.fwd_segment_position - 1];
 
@@ -704,6 +707,19 @@ Status TilePlugin::HandleRequest(const api::TileParameters &parameters, std::str
 
                     std::uint8_t forward_datasource = 0;
                     std::uint8_t reverse_datasource = 0;
+                    forward_weight_vector.clear();
+                    forward_weight_vector =
+                        facade.GetUncompressedForwardWeights(edge.packed_geometry_id);
+                    forward_weight = forward_weight_vector[edge.fwd_segment_position];
+
+                    forward_datasource_vector.clear();
+                    forward_datasource_vector =
+                        facade.GetUncompressedForwardDatasources(edge.packed_geometry_id);
+                    forward_datasource = forward_datasource_vector[edge.fwd_segment_position];
+
+                    reverse_weight_vector.clear();
+                    reverse_weight_vector =
+                        facade.GetUncompressedReverseWeights(edge.packed_geometry_id);
 
                     std::string name = facade.GetNameForID(edge.name_id);
 
@@ -844,8 +860,8 @@ Status TilePlugin::HandleRequest(const api::TileParameters &parameters, std::str
                         }
                     }
                     reverse_datasource_vector.clear();
-                    facade.GetUncompressedReverseDatasources(edge.packed_geometry_id,
-                                                             reverse_datasource_vector);
+                    reverse_datasource_vector =
+                        facade.GetUncompressedReverseDatasources(edge.packed_geometry_id);
                     reverse_datasource =
                         reverse_datasource_vector[reverse_datasource_vector.size() -
                                                   edge.fwd_segment_position - 1];
