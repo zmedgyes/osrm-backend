@@ -76,7 +76,7 @@ class InternalDataFacade final : public BaseDataFacade
 
     util::ShM<util::Coordinate, false>::vector m_coordinate_list;
     util::PackedVector<OSMNodeID, false> m_osmnodeid_list;
-    util::ShM<extractor::GeometryID, false>::vector m_via_node_list;
+    util::ShM<extractor::GeometryID, false>::vector m_via_geometry_list;
     util::ShM<unsigned, false>::vector m_name_ID_list;
     util::ShM<extractor::guidance::TurnInstruction, false>::vector m_turn_instruction_list;
     util::ShM<LaneDataID, false>::vector m_lane_data_id;
@@ -189,7 +189,7 @@ class InternalDataFacade final : public BaseDataFacade
         boost::filesystem::ifstream edges_input_stream(edges_file, std::ios::binary);
         unsigned number_of_edges = 0;
         edges_input_stream.read((char *)&number_of_edges, sizeof(unsigned));
-        m_via_node_list.resize(number_of_edges);
+        m_via_geometry_list.resize(number_of_edges);
         m_name_ID_list.resize(number_of_edges);
         m_turn_instruction_list.resize(number_of_edges);
         m_lane_data_id.resize(number_of_edges);
@@ -201,7 +201,7 @@ class InternalDataFacade final : public BaseDataFacade
         {
             edges_input_stream.read((char *)&(current_edge_data),
                                     sizeof(extractor::OriginalEdgeData));
-            m_via_node_list[i] = current_edge_data.via_geometry;
+            m_via_geometry_list[i] = current_edge_data.via_geometry;
             m_name_ID_list[i] = current_edge_data.name_id;
             m_turn_instruction_list[i] = current_edge_data.turn_instruction;
             m_lane_data_id[i] = current_edge_data.lane_data_id;
@@ -672,7 +672,7 @@ class InternalDataFacade final : public BaseDataFacade
 
     virtual extractor::GeometryID GetGeometryIndexForEdgeID(const unsigned id) const override final
     {
-        return m_via_node_list.at(id);
+        return m_via_geometry_list.at(id);
     }
 
     virtual std::size_t GetCoreSize() const override final { return m_is_core_node.size(); }

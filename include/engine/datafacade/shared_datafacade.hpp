@@ -79,7 +79,7 @@ class SharedDataFacade final : public BaseDataFacade
 
     util::ShM<util::Coordinate, true>::vector m_coordinate_list;
     util::PackedVector<OSMNodeID, true> m_osmnodeid_list;
-    util::ShM<extractor::GeometryID, true>::vector m_via_node_list;
+    util::ShM<extractor::GeometryID, true>::vector m_via_geometry_list;
     util::ShM<unsigned, true>::vector m_name_ID_list;
     util::ShM<LaneDataID, true>::vector m_lane_data_id;
     util::ShM<extractor::guidance::TurnInstruction, true>::vector m_turn_instruction_list;
@@ -229,11 +229,12 @@ class SharedDataFacade final : public BaseDataFacade
 
     void LoadViaNodeList()
     {
-        auto via_node_list_ptr = data_layout->GetBlockPtr<extractor::GeometryID>(
+        auto via_geometry_list_ptr = data_layout->GetBlockPtr<extractor::GeometryID>(
             shared_memory, storage::SharedDataLayout::VIA_NODE_LIST);
-        util::ShM<extractor::GeometryID, true>::vector via_node_list(
-            via_node_list_ptr, data_layout->num_entries[storage::SharedDataLayout::VIA_NODE_LIST]);
-        m_via_node_list = std::move(via_node_list);
+        util::ShM<extractor::GeometryID, true>::vector via_geometry_list(
+            via_geometry_list_ptr,
+            data_layout->num_entries[storage::SharedDataLayout::VIA_NODE_LIST]);
+        m_via_geometry_list = std::move(via_geometry_list);
     }
 
     void LoadNames()
@@ -601,7 +602,7 @@ class SharedDataFacade final : public BaseDataFacade
 
     virtual extractor::GeometryID GetGeometryIndexForEdgeID(const unsigned id) const override final
     {
-        return m_via_node_list.at(id);
+        return m_via_geometry_list.at(id);
     }
 
     extractor::guidance::TurnInstruction
