@@ -525,37 +525,41 @@ class SharedDataFacade final : public BaseDataFacade
         return m_osmnodeid_list.at(id);
     }
 
-    virtual void
-    GetUncompressedForwardGeometry(const EdgeID id,
-                                   std::vector<NodeID> &result_nodes) const override final
+    virtual std::vector<NodeID> GetUncompressedForwardGeometry(const EdgeID id) const override final
     {
         const unsigned begin = m_geometry_indices.at(id) + 1;
         const unsigned end = m_geometry_indices.at(id + 1);
 
-        result_nodes.clear();
+        std::vector<NodeID> result_nodes;
+
         result_nodes.reserve(end - begin);
+
         std::for_each(m_geometry_list.begin() + begin,
                       m_geometry_list.begin() + end,
                       [&](const osrm::extractor::CompressedEdgeContainer::CompressedEdge &edge) {
                           result_nodes.emplace_back(edge.node_id);
                       });
+
+        return result_nodes;
     }
 
-    virtual void
-    GetUncompressedReverseGeometry(const EdgeID id,
-                                   std::vector<NodeID> &result_nodes) const override final
+    virtual std::vector<NodeID> GetUncompressedReverseGeometry(const EdgeID id) const override final
     {
         const signed begin = m_geometry_indices.at(id) - 1;
         const signed end = m_geometry_indices.at(id + 1) - 2;
 
-        result_nodes.clear();
+        std::vector<NodeID> result_nodes;
+
         result_nodes.reserve(end - begin);
+
         for (signed i = end; i > begin; --i)
         {
             const osrm::extractor::CompressedEdgeContainer::CompressedEdge &edge =
                 m_geometry_list.at(i);
             result_nodes.emplace_back(edge.node_id);
         }
+
+        return result_nodes;
     }
 
     virtual void

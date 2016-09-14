@@ -5,10 +5,10 @@
 
 #include "contractor/query_edge.hpp"
 #include "extractor/edge_based_node.hpp"
-#include "extractor/original_edge_data.hpp"
 #include "extractor/external_memory_node.hpp"
 #include "extractor/guidance/turn_instruction.hpp"
 #include "extractor/guidance/turn_lane_types.hpp"
+#include "extractor/original_edge_data.hpp"
 #include "engine/phantom_node.hpp"
 #include "util/exception.hpp"
 #include "util/guidance/bearing_class.hpp"
@@ -77,11 +77,9 @@ class BaseDataFacade
 
     virtual extractor::GeometryID GetGeometryIndexForEdgeID(const unsigned id) const = 0;
 
-    virtual void GetUncompressedForwardGeometry(const EdgeID id,
-                                                std::vector<NodeID> &result_nodes) const = 0;
+    virtual std::vector<NodeID> GetUncompressedForwardGeometry(const EdgeID id) const = 0;
 
-    virtual void GetUncompressedReverseGeometry(const EdgeID id,
-                                                std::vector<NodeID> &result_nodes) const = 0;
+    virtual std::vector<NodeID> GetUncompressedReverseGeometry(const EdgeID id) const = 0;
 
     // Gets the weight values for each segment in an uncompressed geometry.
     // Should always be 1 shorter than GetUncompressedGeometry

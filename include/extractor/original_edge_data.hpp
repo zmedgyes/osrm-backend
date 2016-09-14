@@ -20,13 +20,9 @@ namespace extractor
  */
 struct GeometryID
 {
-    GeometryID(const NodeID id_, const bool forward_) : id{id_}, forward{forward_}
-    {
-    }
+    GeometryID(const NodeID id_, const bool forward_) : id{id_}, forward{forward_} {}
 
-    GeometryID() : id(std::numeric_limits<unsigned>::max() >> 1), forward(false)
-    {
-    }
+    GeometryID() : id(std::numeric_limits<unsigned>::max() >> 1), forward(false) {}
 
     NodeID id : 31;
     std::uint32_t forward : 1;
@@ -46,7 +42,7 @@ struct OriginalEdgeData
     }
 
     OriginalEdgeData()
-        : via_geometry{std::numeric_limits<unsigned>::max() >> 1,false},
+        : via_geometry{std::numeric_limits<unsigned>::max() >> 1, false},
           name_id(std::numeric_limits<unsigned>::max()), entry_classid(INVALID_ENTRY_CLASSID),
           lane_data_id(INVALID_LANE_DATAID), turn_instruction(guidance::TurnInstruction::INVALID()),
           travel_mode(TRAVEL_MODE_INACCESSIBLE)
