@@ -848,10 +848,12 @@ class SharedDataFacade final : public BaseDataFacade
         }
         else
         {
-            std::for_each(
-                m_datasource_list.rbegin() + (m_datasource_list.size() - begin),
-                m_datasource_list.rbegin() + (m_datasource_list.size() - end),
-                [&](const uint8_t &datasource_id) { result_datasources.push_back(datasource_id); });
+            for (unsigned i = end; i > begin; --i)
+            {
+                const uint8_t &datasource_id =
+                    m_datasource_list.at(i);
+                result_datasources.emplace_back(datasource_id);
+            }
         }
 
         return result_datasources;
