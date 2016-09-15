@@ -445,9 +445,14 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
 
                 distance += turn_penalty;
 
+                const NodeID smaller = node_u < node_v ? node_u : node_v;
+                const NodeID larger = node_u > node_v ? node_u : node_v;
+                const EdgeID smaller_to_larger_edge = m_node_based_graph->FindEdge(smaller, larger);
+                const EdgeData &smaller_to_larger_edge_data = m_node_based_graph->GetEdgeData(smaller_to_larger_edge);
+                const bool is_encoded_forwards = smaller_to_larger_edge_data.edge_id == SPECIAL_NODEID ? node_u > node_v : node_u < node_v;
                 BOOST_ASSERT(m_compressed_edge_container.HasZippedEntryForID(edge_from_u));
                 original_edge_data_vector.emplace_back(
-                    GeometryID{m_compressed_edge_container.GetZippedPositionForID(edge_from_u), node_v > node_u},
+                    GeometryID{m_compressed_edge_container.GetZippedPositionForID(edge_from_u), is_encoded_forwards},
                     edge_data1.name_id,
                     turn.lane_data_id,
                     turn_instruction,
