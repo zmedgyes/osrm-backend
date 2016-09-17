@@ -802,7 +802,7 @@ class SharedDataFacade final : public BaseDataFacade
     virtual std::vector<uint8_t>
     GetUncompressedForwardDatasources(const EdgeID id) const override final
     {
-        const unsigned begin = m_geometry_indices.at(id);
+        const unsigned begin = m_geometry_indices.at(id) + 1;
         const unsigned end = m_geometry_indices.at(id + 1);
 
         std::vector<uint8_t> result_datasources;
