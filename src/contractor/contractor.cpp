@@ -785,7 +785,7 @@ EdgeID Contractor::LoadEdgeExpandedGraph(
                 {
                     if (speed_iter->speed_source.speed > 0)
                     {
-                        auto new_segment_weight = distanceAndSpeedToWeight(
+                        const auto new_segment_weight = distanceAndSpeedToWeight(
                             segmentblocks[i].segment_length, speed_iter->speed_source.speed);
                         new_weight += new_segment_weight;
                     }

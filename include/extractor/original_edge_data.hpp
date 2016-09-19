@@ -13,21 +13,6 @@ namespace osrm
 namespace extractor
 {
 
-/* We need to bit pack here because the index for the via_node
- * is given to us without knowing whether the geometry should
- * be read forward or in reverse. The extra field `forward`
- * indicates that to the routing engine
- */
-struct GeometryID
-{
-    GeometryID(const NodeID id_, const bool forward_) : id{id_}, forward{forward_} {}
-
-    GeometryID() : id(std::numeric_limits<unsigned>::max() >> 1), forward(false) {}
-
-    NodeID id : 31;
-    std::uint32_t forward : 1;
-};
-
 struct OriginalEdgeData
 {
     explicit OriginalEdgeData(GeometryID via_geometry,

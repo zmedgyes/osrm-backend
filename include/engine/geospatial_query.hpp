@@ -372,7 +372,7 @@ template <typename RTreeT, typename DataFacadeT> class GeospatialQuery
         int forward_offset = 0, forward_weight = 0;
         int reverse_offset = 0, reverse_weight = 0;
 
-        if (data.packed_geometry_id != SPECIAL_EDGEID)
+        if (data.packed_geometry_id != SPECIAL_GEOMETRYID)
         {
             const std::vector<EdgeWeight> forward_weight_vector = datafacade.GetUncompressedForwardWeights(data.packed_geometry_id);
             const std::vector<EdgeWeight> reverse_weight_vector = datafacade.GetUncompressedReverseWeights(data.packed_geometry_id);
@@ -472,7 +472,7 @@ template <typename RTreeT, typename DataFacadeT> class GeospatialQuery
         bool forward_edge_valid = false;
         bool reverse_edge_valid = false;
 
-        if (segment.data.packed_geometry_id != SPECIAL_EDGEID)
+        if (segment.data.packed_geometry_id != SPECIAL_GEOMETRYID)
         {
             const std::vector<EdgeWeight> forward_weight_vector = datafacade.GetUncompressedForwardWeights(segment.data.packed_geometry_id);
 

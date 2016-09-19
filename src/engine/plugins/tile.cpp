@@ -610,7 +610,7 @@ Status TilePlugin::HandleRequest(const api::TileParameters &parameters, std::str
         // TODO this approach of writing at least an empty vector for any segment is probably stupid
         // (inefficient)
 
-        if (edge.packed_geometry_id != SPECIAL_EDGEID)
+        if (edge.packed_geometry_id != SPECIAL_GEOMETRYID)
         {
             forward_weight_vector.clear();
             reverse_weight_vector.clear();

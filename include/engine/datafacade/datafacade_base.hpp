@@ -75,7 +75,7 @@ class BaseDataFacade
     virtual util::Coordinate GetCoordinateOfNode(const unsigned id) const = 0;
     virtual OSMNodeID GetOSMNodeIDOfNode(const unsigned id) const = 0;
 
-    virtual extractor::GeometryID GetGeometryIndexForEdgeID(const unsigned id) const = 0;
+    virtual GeometryID GetGeometryIndexForEdgeID(const unsigned id) const = 0;
 
     virtual std::vector<NodeID> GetUncompressedForwardGeometry(const EdgeID id) const = 0;
 

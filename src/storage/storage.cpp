@@ -497,7 +497,7 @@ int Storage::Run()
     }
 
     // load original edge information
-    extractor::GeometryID *via_geometry_ptr = shared_layout_ptr->GetBlockPtr<extractor::GeometryID, true>(
+    GeometryID *via_geometry_ptr = shared_layout_ptr->GetBlockPtr<GeometryID, true>(
         shared_memory_ptr, SharedDataLayout::VIA_NODE_LIST);
 
     unsigned *name_id_ptr = shared_layout_ptr->GetBlockPtr<unsigned, true>(

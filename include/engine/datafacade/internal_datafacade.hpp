@@ -76,7 +76,7 @@ class InternalDataFacade final : public BaseDataFacade
 
     util::ShM<util::Coordinate, false>::vector m_coordinate_list;
     util::PackedVector<OSMNodeID, false> m_osmnodeid_list;
-    util::ShM<extractor::GeometryID, false>::vector m_via_geometry_list;
+    util::ShM<GeometryID, false>::vector m_via_geometry_list;
     util::ShM<unsigned, false>::vector m_name_ID_list;
     util::ShM<extractor::guidance::TurnInstruction, false>::vector m_turn_instruction_list;
     util::ShM<LaneDataID, false>::vector m_lane_data_id;
@@ -670,7 +670,7 @@ class InternalDataFacade final : public BaseDataFacade
         return GetNameForID(name_id + 1);
     }
 
-    virtual extractor::GeometryID GetGeometryIndexForEdgeID(const unsigned id) const override final
+    virtual GeometryID GetGeometryIndexForEdgeID(const unsigned id) const override final
     {
         return m_via_geometry_list.at(id);
     }
@@ -766,7 +766,7 @@ class InternalDataFacade final : public BaseDataFacade
     virtual std::vector<uint8_t>
     GetUncompressedForwardDatasources(const EdgeID id) const override final
     {
-        const unsigned begin = m_geometry_indices.at(id);
+        const unsigned begin = m_geometry_indices.at(id) + 1;
         const unsigned end = m_geometry_indices.at(id + 1);
 
         std::vector<uint8_t> result_datasources;
