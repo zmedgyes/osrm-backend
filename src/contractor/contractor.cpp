@@ -633,7 +633,7 @@ EdgeID Contractor::LoadEdgeExpandedGraph(
                     counters[LUA_SOURCE] += 1;
                 }
 
-                auto reverse_speed_iter =
+                const auto reverse_speed_iter =
                     find(segment_speed_lookup, Segment{v->node_id, u->node_id});
                 if (reverse_speed_iter != segment_speed_lookup.end())
                 {
