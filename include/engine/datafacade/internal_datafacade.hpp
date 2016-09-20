@@ -691,6 +691,15 @@ class InternalDataFacade final : public BaseDataFacade
 
     virtual std::vector<NodeID> GetUncompressedForwardGeometry(const EdgeID id) const override final
     {
+        /*
+         * NodeID's for geometries are stored in one place for
+         * both forward and reverse segments along the same bi-
+         * directional edge. The m_geometry_indices stores
+         * refences to where to find the beginning of the bi-
+         * directional edge in the m_geometry_list vector. For
+         * forward geometries of bi-directional edges, edges 2 to
+         * n of that edge need to be read.
+         */
         const unsigned begin = m_geometry_indices.at(id) + 1;
         const unsigned end = m_geometry_indices.at(id + 1);
 
@@ -709,6 +718,15 @@ class InternalDataFacade final : public BaseDataFacade
 
     virtual std::vector<NodeID> GetUncompressedReverseGeometry(const EdgeID id) const override final
     {
+        /*
+         * NodeID's for geometries are stored in one place for
+         * both forward and reverse segments along the same bi-
+         * directional edge. The m_geometry_indices stores
+         * refences to where to find the beginning of the bi-
+         * directional edge in the m_geometry_list vector. For
+         * reverse geometries of bi-directional edges, edges 1 to
+         * n-1 of that edge need to be read in reverse.
+         */
         const unsigned begin = m_geometry_indices.at(id);
         const unsigned end = m_geometry_indices.at(id + 1) - 1;
 
@@ -728,6 +746,15 @@ class InternalDataFacade final : public BaseDataFacade
     virtual std::vector<EdgeWeight>
     GetUncompressedForwardWeights(const EdgeID id) const override final
     {
+        /*
+         * EdgeWeights's for geometries are stored in one place for
+         * both forward and reverse segments along the same bi-
+         * directional edge. The m_geometry_indices stores
+         * refences to where to find the beginning of the bi-
+         * directional edge in the m_geometry_list vector. For
+         * forward weights of bi-directional edges, edges 2 to
+         * n of that edge need to be read.
+         */
         const unsigned begin = m_geometry_indices.at(id) + 1;
         const unsigned end = m_geometry_indices.at(id + 1);
 
@@ -746,6 +773,15 @@ class InternalDataFacade final : public BaseDataFacade
     virtual std::vector<EdgeWeight>
     GetUncompressedReverseWeights(const EdgeID id) const override final
     {
+        /*
+         * EdgeWeights for geometries are stored in one place for
+         * both forward and reverse segments along the same bi-
+         * directional edge. The m_geometry_indices stores
+         * refences to where to find the beginning of the bi-
+         * directional edge in the m_geometry_list vector. For
+         * reverse weights of bi-directional edges, edges 1 to
+         * n-1 of that edge need to be read in reverse.
+         */
         const unsigned begin = m_geometry_indices.at(id);
         const unsigned end = m_geometry_indices.at(id + 1) - 1;
 
@@ -766,6 +802,15 @@ class InternalDataFacade final : public BaseDataFacade
     virtual std::vector<uint8_t>
     GetUncompressedForwardDatasources(const EdgeID id) const override final
     {
+        /*
+         * Data sources for geometries are stored in one place for
+         * both forward and reverse segments along the same bi-
+         * directional edge. The m_geometry_indices stores
+         * refences to where to find the beginning of the bi-
+         * directional edge in the m_geometry_list vector. For
+         * forward datasources of bi-directional edges, edges 2 to
+         * n of that edge need to be read.
+         */
         const unsigned begin = m_geometry_indices.at(id) + 1;
         const unsigned end = m_geometry_indices.at(id + 1);
 
@@ -796,6 +841,15 @@ class InternalDataFacade final : public BaseDataFacade
     virtual std::vector<uint8_t>
     GetUncompressedReverseDatasources(const EdgeID id) const override final
     {
+        /*
+         * Datasources for geometries are stored in one place for
+         * both forward and reverse segments along the same bi-
+         * directional edge. The m_geometry_indices stores
+         * refences to where to find the beginning of the bi-
+         * directional edge in the m_geometry_list vector. For
+         * reverse datasources of bi-directional edges, edges 1 to
+         * n-1 of that edge need to be read in reverse.
+         */
         const unsigned begin = m_geometry_indices.at(id);
         const unsigned end = m_geometry_indices.at(id + 1) - 1;
 
