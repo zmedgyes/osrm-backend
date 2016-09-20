@@ -61,9 +61,9 @@ class MockDataFacade final : public engine::datafacade::BaseDataFacade
     }
     OSMNodeID GetOSMNodeIDOfNode(const unsigned /* id */) const override { return OSMNodeID{0}; }
     bool EdgeIsCompressed(const unsigned /* id */) const { return false; }
-    extractor::GeometryID GetGeometryIndexForEdgeID(const unsigned /* id */) const override
+    GeometryID GetGeometryIndexForEdgeID(const unsigned /* id */) const override
     {
-        return extractor::GeometryID{SPECIAL_NODEID, false};
+        return GeometryID{SPECIAL_GEOMETRYID, false};
     }
     std::vector<NodeID> GetUncompressedForwardGeometry(const EdgeID /* id */) const override
     {
