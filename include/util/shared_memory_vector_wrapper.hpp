@@ -99,9 +99,9 @@ template <typename DataT> class SharedMemoryWrapper
 
     ShMemIterator<DataT> end() const { return ShMemIterator<DataT>(m_ptr + m_size); }
 
-    ShMemReverseIterator<DataT> rbegin() const { return ShMemReverseIterator<DataT>(m_ptr + m_size); }
+    ShMemReverseIterator<DataT> rbegin() const { return ShMemReverseIterator<DataT>(m_ptr + m_size - 1); }
 
-    ShMemReverseIterator<DataT> rend() const { return ShMemReverseIterator<DataT>(m_ptr); }
+    ShMemReverseIterator<DataT> rend() const { return ShMemReverseIterator<DataT>(m_ptr - 1); }
 
     std::size_t size() const { return m_size; }
 

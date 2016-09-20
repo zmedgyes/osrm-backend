@@ -546,19 +546,18 @@ class SharedDataFacade final : public BaseDataFacade
 
     virtual std::vector<NodeID> GetUncompressedReverseGeometry(const EdgeID id) const override final
     {
-        const signed begin = m_geometry_indices.at(id) - 1;
-        const signed end = m_geometry_indices.at(id + 1) - 2;
+        const signed begin = m_geometry_indices.at(id);
+        const signed end = m_geometry_indices.at(id + 1) - 1;
 
         std::vector<NodeID> result_nodes;
 
         result_nodes.reserve(end - begin);
 
-        for (signed i = end; i > begin; --i)
-        {
-            const osrm::extractor::CompressedEdgeContainer::CompressedEdge &edge =
-                m_geometry_list.at(i);
-            result_nodes.emplace_back(edge.node_id);
-        }
+        std::for_each(m_geometry_list.rbegin() + (m_geometry_list.size() - end),
+                      m_geometry_list.rbegin() + (m_geometry_list.size() - begin),
+                      [&](const osrm::extractor::CompressedEdgeContainer::CompressedEdge &edge) {
+                          result_nodes.emplace_back(edge.node_id);
+                      });
 
         return result_nodes;
     }
@@ -584,18 +583,17 @@ class SharedDataFacade final : public BaseDataFacade
     virtual std::vector<EdgeWeight>
     GetUncompressedReverseWeights(const EdgeID id) const override final
     {
-        const signed begin = m_geometry_indices.at(id) - 1;
-        const signed end = m_geometry_indices.at(id + 1) - 2;
+        const signed begin = m_geometry_indices.at(id);
+        const signed end = m_geometry_indices.at(id + 1) - 1;
 
         std::vector<EdgeWeight> result_weights;
         result_weights.reserve(end - begin);
 
-        for (signed i = end; i > begin; --i)
-        {
-            const osrm::extractor::CompressedEdgeContainer::CompressedEdge &edge =
-                m_geometry_list.at(i);
-            result_weights.emplace_back(edge.reverse_weight);
-        }
+        std::for_each(m_geometry_list.rbegin() + (m_geometry_list.size() - end),
+                      m_geometry_list.rbegin() + (m_geometry_list.size() - begin),
+                      [&](const osrm::extractor::CompressedEdgeContainer::CompressedEdge &edge) {
+                          result_weights.emplace_back(edge.reverse_weight);
+                      });
 
         return result_weights;
     }
@@ -848,12 +846,10 @@ class SharedDataFacade final : public BaseDataFacade
         }
         else
         {
-            for (unsigned i = end; i > begin; --i)
-            {
-                const uint8_t &datasource_id =
-                    m_datasource_list.at(i);
-                result_datasources.emplace_back(datasource_id);
-            }
+            std::for_each(
+                m_datasource_list.rbegin() + (m_datasource_list.size() - end),
+                m_datasource_list.rbegin() + (m_datasource_list.size() - begin),
+                [&](const uint8_t &datasource_id) { result_datasources.push_back(datasource_id); });
         }
 
         return result_datasources;
