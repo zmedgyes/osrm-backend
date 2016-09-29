@@ -595,7 +595,7 @@ EdgeID Contractor::LoadEdgeExpandedGraph(
 
                 const unsigned forward_begin =
                     m_geometry_indices.at(leaf_object.packed_geometry_id);
-                const auto current_fwd_segment = &(m_geometry_list[forward_begin + leaf_object.fwd_segment_position]);
+                const auto current_segment = &(m_geometry_list[forward_begin + leaf_object.fwd_segment_position]);
 
                 u = &(internal_to_external_node_map
                           [m_geometry_list[forward_begin +
@@ -616,7 +616,7 @@ EdgeID Contractor::LoadEdgeExpandedGraph(
                         forward_speed_iter,
                         segment_length,
                         segment_speed_filenames,
-                        current_fwd_segment->weight,
+                        current_segment->forward_weight,
                         log_edge_updates_factor);
 
                     m_geometry_list[forward_begin + 1 + leaf_object.fwd_segment_position].forward_weight =
@@ -641,7 +641,7 @@ EdgeID Contractor::LoadEdgeExpandedGraph(
                         reverse_speed_iter,
                         segment_length,
                         segment_speed_filenames,
-                        current_rev_segment->weight,
+                        current_segment->reverse_weight,
                         log_edge_updates_factor);
                     m_geometry_list[forward_begin + leaf_object.fwd_segment_position].reverse_weight =
                         new_segment_weight;
