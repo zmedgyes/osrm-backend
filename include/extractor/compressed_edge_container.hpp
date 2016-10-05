@@ -49,11 +49,13 @@ class CompressedEdgeContainer
     unsigned ZipEdges(const unsigned f_edge_pos, const unsigned r_edge_pos);
 
     bool HasEntryForID(const EdgeID edge_id) const;
-    bool HasZippedEntryForID(const EdgeID edge_id) const;
+    bool HasZippedEntryForForwardID(const EdgeID edge_id) const;
+    bool HasZippedEntryForReverseID(const EdgeID edge_id) const;
     void PrintStatistics() const;
     void SerializeInternalVector(const std::string &path) const;
     unsigned GetPositionForID(const EdgeID edge_id) const;
-    unsigned GetZippedPositionForID(const EdgeID edge_id) const;
+    unsigned GetZippedPositionForForwardID(const EdgeID edge_id) const;
+    unsigned GetZippedPositionForReverseID(const EdgeID edge_id) const;
     const OnewayEdgeBucket &GetBucketReference(const EdgeID edge_id) const;
     bool IsTrivial(const EdgeID edge_id) const;
     NodeID GetFirstEdgeTargetID(const EdgeID edge_id) const;
@@ -68,7 +70,8 @@ class CompressedEdgeContainer
     std::vector<EdgeBucket> m_compressed_geometries;
     std::vector<unsigned> m_free_list;
     std::unordered_map<EdgeID, unsigned> m_edge_id_to_list_index_map;
-    std::unordered_map<EdgeID, unsigned> m_edge_id_to_zipped_index_map;
+    std::unordered_map<EdgeID, unsigned> m_forward_edge_id_to_zipped_index_map;
+    std::unordered_map<EdgeID, unsigned> m_reverse_edge_id_to_zipped_index_map;
 };
 }
 }

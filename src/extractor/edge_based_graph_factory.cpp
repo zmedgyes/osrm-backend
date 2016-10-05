@@ -445,19 +445,26 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
 
                 distance += turn_penalty;
 
-                const NodeID smaller = node_u < node_v ? node_u : node_v;
-                const NodeID larger = node_u > node_v ? node_u : node_v;
-                const EdgeID smaller_to_larger_edge = m_node_based_graph->FindEdge(smaller, larger);
-                const EdgeData &smaller_to_larger_edge_data = m_node_based_graph->GetEdgeData(smaller_to_larger_edge);
-                const bool is_encoded_forwards = smaller_to_larger_edge_data.edge_id == SPECIAL_NODEID ? node_u > node_v : node_u < node_v;
-                BOOST_ASSERT(m_compressed_edge_container.HasZippedEntryForID(edge_from_u));
-                original_edge_data_vector.emplace_back(
-                    GeometryID{m_compressed_edge_container.GetZippedPositionForID(edge_from_u), is_encoded_forwards},
-                    edge_data1.name_id,
-                    turn.lane_data_id,
-                    turn_instruction,
-                    entry_class_id,
-                    edge_data1.travel_mode);
+                const bool is_encoded_forwards = m_compressed_edge_container.HasZippedEntryForForwardID(edge_from_u);
+                const bool is_encoded_backwards = m_compressed_edge_container.HasZippedEntryForReverseID(edge_from_u);
+                BOOST_ASSERT(is_encoded_forwards || is_encoded_backwards);
+                if (is_encoded_forwards) {
+                    original_edge_data_vector.emplace_back(
+                        GeometryID{m_compressed_edge_container.GetZippedPositionForForwardID(edge_from_u), true},
+                        edge_data1.name_id,
+                        turn.lane_data_id,
+                        turn_instruction,
+                        entry_class_id,
+                        edge_data1.travel_mode);
+                } else if (is_encoded_backwards) {
+                    original_edge_data_vector.emplace_back(
+                        GeometryID{m_compressed_edge_container.GetZippedPositionForReverseID(edge_from_u), false},
+                        edge_data1.name_id,
+                        turn.lane_data_id,
+                        turn_instruction,
+                        entry_class_id,
+                        edge_data1.travel_mode);
+                }
 
                 ++original_edges_counter;
 

@@ -37,10 +37,16 @@ bool CompressedEdgeContainer::HasEntryForID(const EdgeID edge_id) const
     return iter != m_edge_id_to_list_index_map.end();
 }
 
-bool CompressedEdgeContainer::HasZippedEntryForID(const EdgeID edge_id) const
+bool CompressedEdgeContainer::HasZippedEntryForForwardID(const EdgeID edge_id) const
 {
-    auto iter = m_edge_id_to_zipped_index_map.find(edge_id);
-    return iter != m_edge_id_to_zipped_index_map.end();
+    auto iter = m_forward_edge_id_to_zipped_index_map.find(edge_id);
+    return iter != m_forward_edge_id_to_zipped_index_map.end();
+}
+
+bool CompressedEdgeContainer::HasZippedEntryForReverseID(const EdgeID edge_id) const
+{
+    auto iter = m_reverse_edge_id_to_zipped_index_map.find(edge_id);
+    return iter != m_reverse_edge_id_to_zipped_index_map.end();
 }
 
 unsigned CompressedEdgeContainer::GetPositionForID(const EdgeID edge_id) const
@@ -51,10 +57,18 @@ unsigned CompressedEdgeContainer::GetPositionForID(const EdgeID edge_id) const
     return map_iterator->second;
 }
 
-unsigned CompressedEdgeContainer::GetZippedPositionForID(const EdgeID edge_id) const
+unsigned CompressedEdgeContainer::GetZippedPositionForForwardID(const EdgeID edge_id) const
 {
-    auto map_iterator = m_edge_id_to_zipped_index_map.find(edge_id);
-    BOOST_ASSERT(map_iterator != m_edge_id_to_zipped_index_map.end());
+    auto map_iterator = m_forward_edge_id_to_zipped_index_map.find(edge_id);
+    BOOST_ASSERT(map_iterator != m_forward_edge_id_to_zipped_index_map.end());
+    BOOST_ASSERT(map_iterator->second < m_compressed_geometries.size());
+    return map_iterator->second;
+}
+
+unsigned CompressedEdgeContainer::GetZippedPositionForReverseID(const EdgeID edge_id) const
+{
+    auto map_iterator = m_reverse_edge_id_to_zipped_index_map.find(edge_id);
+    BOOST_ASSERT(map_iterator != m_reverse_edge_id_to_zipped_index_map.end());
     BOOST_ASSERT(map_iterator->second < m_compressed_geometries.size());
     return map_iterator->second;
 }
@@ -245,8 +259,8 @@ unsigned CompressedEdgeContainer::ZipEdges(const EdgeID f_edge_id, const EdgeID 
     BOOST_ASSERT(forward_bucket.size() == reverse_bucket.size());
 
     const unsigned zipped_geometry_id = m_compressed_geometries.size();
-    m_edge_id_to_zipped_index_map[f_edge_id] = zipped_geometry_id;
-    m_edge_id_to_zipped_index_map[r_edge_id] = zipped_geometry_id;
+    m_forward_edge_id_to_zipped_index_map[f_edge_id] = zipped_geometry_id;
+    m_reverse_edge_id_to_zipped_index_map[r_edge_id] = zipped_geometry_id;
 
     std::vector<CompressedEdge> zipped_edge_bucket;
     const auto &first_node = reverse_bucket.back();
