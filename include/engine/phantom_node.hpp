@@ -191,7 +191,7 @@ inline std::ostream &operator<<(std::ostream &out, const PhantomNode &pn)
         << "rev-w: " << pn.reverse_weight << ", "
         << "fwd-o: " << pn.forward_offset << ", "
         << "rev-o: " << pn.reverse_offset << ", "
-        << "fwd_geom: " << pn.packed_geometry_id << ", "
+        << "geom: " << pn.packed_geometry_id << ", "
         << "comp: " << pn.component.is_tiny << " / " << pn.component.id << ", "
         << "pos: " << pn.fwd_segment_position << ", "
         << "loc: " << pn.location;
