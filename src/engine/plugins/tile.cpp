@@ -609,34 +609,31 @@ Status TilePlugin::HandleRequest(const api::TileParameters &parameters, std::str
         // TODO this approach of writing at least an empty vector for any segment is probably stupid
         // (inefficient)
 
-        if (edge.packed_geometry_id != SPECIAL_GEOMETRYID)
-        {
-            forward_weight_vector.clear();
-            reverse_weight_vector.clear();
-            forward_weight_vector =
-                facade.GetUncompressedForwardWeights(edge.packed_geometry_id);
-            reverse_weight_vector =
-                facade.GetUncompressedReverseWeights(edge.packed_geometry_id);
+        forward_weight_vector.clear();
+        reverse_weight_vector.clear();
+        forward_weight_vector =
+            facade.GetUncompressedForwardWeights(edge.packed_geometry_id);
+        reverse_weight_vector =
+            facade.GetUncompressedReverseWeights(edge.packed_geometry_id);
 
-            forward_weight = forward_weight_vector[edge.fwd_segment_position];
+        forward_weight = forward_weight_vector[edge.fwd_segment_position];
 
-            BOOST_ASSERT(edge.fwd_segment_position < reverse_weight_vector.size());
-            reverse_weight =
-                reverse_weight_vector[reverse_weight_vector.size() - edge.fwd_segment_position - 1];
+        BOOST_ASSERT(edge.fwd_segment_position < reverse_weight_vector.size());
+        reverse_weight =
+            reverse_weight_vector[reverse_weight_vector.size() - edge.fwd_segment_position - 1];
 
-            forward_datasource_vector.clear();
-            forward_datasource_vector = facade.GetUncompressedForwardDatasources(edge.packed_geometry_id);
-            forward_datasource = forward_datasource_vector[edge.fwd_segment_position];
+        forward_datasource_vector.clear();
+        forward_datasource_vector = facade.GetUncompressedForwardDatasources(edge.packed_geometry_id);
+        forward_datasource = forward_datasource_vector[edge.fwd_segment_position];
 
-            reverse_datasource_vector.clear();
-            // TODO have not tested geom zipping with tiles yet
-            reverse_datasource_vector =
-                facade.GetUncompressedReverseDatasources(edge.packed_geometry_id);
-            reverse_datasource = reverse_datasource_vector[reverse_datasource_vector.size() -
-                                                           edge.fwd_segment_position - 1];
+        reverse_datasource_vector.clear();
+        // TODO have not tested geom zipping with tiles yet
+        reverse_datasource_vector =
+            facade.GetUncompressedReverseDatasources(edge.packed_geometry_id);
+        reverse_datasource = reverse_datasource_vector[reverse_datasource_vector.size() -
+                                                       edge.fwd_segment_position - 1];
 
-            use_line_value(reverse_weight);
-        }
+        use_line_value(reverse_weight);
 
         // Keep track of the highest datasource seen so that we don't write unnecessary
         // data to the layer attribute values
@@ -710,28 +707,25 @@ Status TilePlugin::HandleRequest(const api::TileParameters &parameters, std::str
 
                     std::string name = facade.GetNameForID(edge.name_id);
 
-                    if (edge.packed_geometry_id != SPECIAL_EDGEID)
-                    {
-                        forward_weight_vector.clear();
-                        forward_weight_vector = facade.GetUncompressedForwardWeights(edge.packed_geometry_id);
-                        forward_weight = forward_weight_vector[edge.fwd_segment_position];
+                    forward_weight_vector.clear();
+                    forward_weight_vector = facade.GetUncompressedForwardWeights(edge.packed_geometry_id);
+                    forward_weight = forward_weight_vector[edge.fwd_segment_position];
 
-                        forward_datasource_vector.clear();
-                        forward_datasource_vector = facade.GetUncompressedForwardDatasources(edge.packed_geometry_id);
-                        forward_datasource = forward_datasource_vector[edge.fwd_segment_position];
+                    forward_datasource_vector.clear();
+                    forward_datasource_vector = facade.GetUncompressedForwardDatasources(edge.packed_geometry_id);
+                    forward_datasource = forward_datasource_vector[edge.fwd_segment_position];
 
-                        reverse_weight_vector.clear();
-                        reverse_weight_vector = facade.GetUncompressedReverseWeights(edge.packed_geometry_id);
+                    reverse_weight_vector.clear();
+                    reverse_weight_vector = facade.GetUncompressedReverseWeights(edge.packed_geometry_id);
 
-                        reverse_weight = reverse_weight_vector[reverse_weight_vector.size() -
-                                                               edge.fwd_segment_position - 1];
+                    reverse_weight = reverse_weight_vector[reverse_weight_vector.size() -
+                                                           edge.fwd_segment_position - 1];
 
-                        reverse_datasource_vector.clear();
-                        reverse_datasource_vector = facade.GetUncompressedReverseDatasources(edge.packed_geometry_id);
-                        reverse_datasource =
-                            reverse_datasource_vector[reverse_datasource_vector.size() -
-                                                      edge.fwd_segment_position - 1];
-                    }
+                    reverse_datasource_vector.clear();
+                    reverse_datasource_vector = facade.GetUncompressedReverseDatasources(edge.packed_geometry_id);
+                    reverse_datasource =
+                        reverse_datasource_vector[reverse_datasource_vector.size() -
+                                                  edge.fwd_segment_position - 1];
 
                     // Keep track of the highest datasource seen so that we don't write unnecessary
                     // data to the layer attribute values
