@@ -272,31 +272,30 @@ template <class DataFacadeT, class Derived> class BasicRoutingInterface
 
                 const auto total_weight = std::accumulate(weight_vector.begin(), weight_vector.end(), 0);
 
-                BOOST_ASSERT(weight_vector.size() == id_vector.size());
                 const bool is_first_segment = unpacked_path.empty();
 
                 const std::size_t start_index =
                     (is_first_segment
                          ? ((start_traversed_in_reverse)
-                                ? id_vector.size() -
+                                ? weight_vector.size() -
                                       phantom_node_pair.source_phantom.fwd_segment_position - 1
                                 : phantom_node_pair.source_phantom.fwd_segment_position)
                          : 0);
-                const std::size_t end_index = id_vector.size();
+                const std::size_t end_index = weight_vector.size();
 
                 BOOST_ASSERT(start_index >= 0);
                 BOOST_ASSERT(start_index < end_index);
-                for (std::size_t i = start_index; i < end_index; ++i)
+                for (std::size_t segment_idx = start_index; segment_idx < end_index; ++segment_idx)
                 {
                     unpacked_path.push_back(
-                        PathData{id_vector[i],
+                        PathData{id_vector[segment_idx + 1],
                                  name_index,
-                                 weight_vector[i],
+                                 weight_vector[segment_idx],
                                  extractor::guidance::TurnInstruction::NO_TURN(),
                                  {{0, INVALID_LANEID}, INVALID_LANE_DESCRIPTIONID},
                                  travel_mode,
                                  INVALID_ENTRY_CLASSID,
-                                 datasource_vector[i]});
+                                 datasource_vector[segment_idx]});
                 }
                 BOOST_ASSERT(unpacked_path.size() > 0);
                 if (facade->hasLaneData(edge_data.id))
@@ -329,10 +328,10 @@ template <class DataFacadeT, class Derived> class BasicRoutingInterface
             if (is_local_path)
             {
                 start_index =
-                    id_vector.size() - phantom_node_pair.source_phantom.fwd_segment_position - 1;
+                    weight_vector.size() - phantom_node_pair.source_phantom.fwd_segment_position - 1;
             }
             end_index =
-                id_vector.size() - phantom_node_pair.target_phantom.fwd_segment_position - 1;
+                weight_vector.size() - phantom_node_pair.target_phantom.fwd_segment_position - 1;
         }
         else
         {
@@ -358,20 +357,20 @@ template <class DataFacadeT, class Derived> class BasicRoutingInterface
         // t: fwd_segment 3
         // -> (U, v), (v, w), (w, x)
         // note that (x, t) is _not_ included but needs to be added later.
-        for (std::size_t i = start_index; i != end_index; (start_index < end_index ? ++i : --i))
+        for (std::size_t segment_idx = start_index; segment_idx != end_index; (start_index < end_index ? ++segment_idx : --segment_idx))
         {
-            BOOST_ASSERT(i < id_vector.size());
+            BOOST_ASSERT(segment_idx < id_vector.size() - 1);
             BOOST_ASSERT(phantom_node_pair.target_phantom.forward_travel_mode > 0);
             unpacked_path.push_back(PathData{
-                id_vector[i],
+                id_vector[start_index < end_index ? segment_idx + 1 : segment_idx - 1],
                 phantom_node_pair.target_phantom.name_id,
-                weight_vector[i],
+                weight_vector[segment_idx],
                 extractor::guidance::TurnInstruction::NO_TURN(),
                 {{0, INVALID_LANEID}, INVALID_LANE_DESCRIPTIONID},
                 target_traversed_in_reverse ? phantom_node_pair.target_phantom.backward_travel_mode
                                             : phantom_node_pair.target_phantom.forward_travel_mode,
                 INVALID_ENTRY_CLASSID,
-                datasource_vector[i]});
+                datasource_vector[segment_idx]});
         }
 
         if (unpacked_path.size() > 0)
