@@ -16,6 +16,9 @@
 #include "util/simple_logger.hpp"
 #include "util/timing_util.hpp"
 
+#include "extractor/geojson_debug_policies.hpp"
+#include "util/geojson_debug_logger.hpp"
+
 #include "extractor/compressed_edge_container.hpp"
 #include "extractor/restriction_map.hpp"
 #include "util/static_graph.hpp"
@@ -112,8 +115,7 @@ int Extractor::run(ScriptingEnvironment &scripting_environment)
     TIMER_START(extracting);
 
     const unsigned recommended_num_threads = tbb::task_scheduler_init::default_num_threads();
-    const auto number_of_threads =
-        std::min(recommended_num_threads, config.requested_num_threads);
+    const auto number_of_threads = std::min(recommended_num_threads, config.requested_num_threads);
     tbb::task_scheduler_init init(number_of_threads);
 
     {
@@ -495,6 +497,9 @@ Extractor::BuildEdgeExpandedGraph(ScriptingEnvironment &scripting_environment,
         turn_lane_masks,
         turn_lane_map);
 
+    extractor::guidance::CoordinateExtractor coord_extractor(*node_based_graph, compressed_edge_container, internal_to_external_node_map);
+    util::ScopedGeojsonLoggerGuard<extractor::ObviousPrinter> geojson_guard(
+        "debug.geojson", *node_based_graph, internal_to_external_node_map, coord_extractor);
     edge_based_graph_factory.Run(scripting_environment,
                                  config.edge_output_path,
                                  config.turn_lane_data_file_name,

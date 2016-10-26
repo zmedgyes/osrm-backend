@@ -9,6 +9,39 @@ namespace osrm
 namespace extractor
 {
 
+ObviousPrinter::ObviousPrinter(
+    const util::NodeBasedDynamicGraph &node_based_graph,
+    const std::vector<extractor::QueryNode> &node_coordinates,
+    const extractor::guidance::CoordinateExtractor &coordinate_extractor)
+    : node_based_graph(node_based_graph), node_coordinates(node_coordinates),
+      coordinate_extractor(coordinate_extractor){};
+util::json::Array ObviousPrinter::
+operator()(const extractor::guidance::ConnectedRoad obvious, NodeID intersection_node) const
+{
+    std::vector<util::Coordinate> coordinates;
+    coordinates.push_back(node_coordinates[intersection_node]);
+
+    const auto road_to_coordinate = [&](const extractor::guidance::ConnectedRoad &connected_road) {
+        const constexpr auto FORWARD = false;
+        const auto to_node = node_based_graph.GetTarget(connected_road.turn.eid);
+        return coordinate_extractor.GetCoordinatesAlongRoad(
+            intersection_node, connected_road.turn.eid, FORWARD, to_node);
+    };
+
+    auto road_coordinates = road_to_coordinate(obvious);
+    coordinates.push_back(coordinate_extractor.TrimCoordinatesToLength(road_coordinates, 15.0).back());
+    const auto json_coordinates = makeJsonArray(coordinates);
+    /*
+    for (auto c : json_coordinates.values) {
+        std::cout << "hi " << c.get<util::json::Array>().values[0].get<util::json::Number>().value << "," << c.get<util::json::Array>().values[1].get<util::json::Number>().value << std::endl;
+    }
+    */
+
+    util::json::Array features;
+    features.values.push_back(util::makeFeature("LineString", json_coordinates));
+    return features;
+}
+
 IntersectionPrinter::IntersectionPrinter(
     const util::NodeBasedDynamicGraph &node_based_graph,
     const std::vector<extractor::QueryNode> &node_coordinates,

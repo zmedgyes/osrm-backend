@@ -18,6 +18,22 @@ namespace osrm
 namespace extractor
 {
 // generate a visualisation of an intersection, printing the coordinates used for angle calculation
+struct ObviousPrinter
+{
+    ObviousPrinter(const util::NodeBasedDynamicGraph &node_based_graph,
+                   const std::vector<extractor::QueryNode> &node_coordinates,
+                   const extractor::guidance::CoordinateExtractor &coordinate_extractor);
+
+    // renders the used coordinate locations for all entries/as well as the resulting
+    // intersection-classification
+    util::json::Array operator()(const extractor::guidance::ConnectedRoad obvious,
+                                 NodeID intersection_node) const;
+
+    const util::NodeBasedDynamicGraph &node_based_graph;
+    const std::vector<extractor::QueryNode> &node_coordinates;
+    const extractor::guidance::CoordinateExtractor &coordinate_extractor;
+};
+
 struct IntersectionPrinter
 {
     IntersectionPrinter(const util::NodeBasedDynamicGraph &node_based_graph,
@@ -27,7 +43,7 @@ struct IntersectionPrinter
     // renders the used coordinate locations for all entries/as well as the resulting
     // intersection-classification
     util::json::Array operator()(const NodeID intersection_node,
-                                  const extractor::guidance::Intersection &intersection) const;
+                                 const extractor::guidance::Intersection &intersection) const;
 
     const util::NodeBasedDynamicGraph &node_based_graph;
     const std::vector<extractor::QueryNode> &node_coordinates;

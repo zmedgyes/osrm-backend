@@ -6,6 +6,9 @@
 #include "util/guidance/toolkit.hpp"
 #include "util/simple_logger.hpp"
 
+#include "extractor/geojson_debug_policies.hpp"
+#include "util/geojson_debug_logger.hpp"
+
 #include <algorithm>
 #include <cstddef>
 
@@ -581,6 +584,7 @@ std::size_t IntersectionHandler::findObviousTurn(const EdgeID via_edge,
 
         if (best_deviation < MAXIMAL_ALLOWED_NO_TURN_DEVIATION &&
             std::min(left_deviation, right_deviation) > FUZZY_ANGLE_DIFFERENCE)
+            util::GeojsonLogger<extractor::ObviousPrinter>::Write(intersection[best], node_based_graph.GetTarget(via_edge));
             return best;
 
         const auto &left_data = node_based_graph.GetEdgeData(intersection[left_index].turn.eid);
@@ -639,6 +643,7 @@ std::size_t IntersectionHandler::findObviousTurn(const EdgeID via_edge,
         const bool distinct_to_right = isDistinct(right_index, right_deviation);
         // Well distinct turn that is nearly straight
         if ((distinct_to_left || obvious_to_left) && (distinct_to_right || obvious_to_right))
+            util::GeojsonLogger<extractor::ObviousPrinter>::Write(intersection[best], node_based_graph.GetTarget(via_edge));
             return best;
     }
     else
@@ -648,6 +653,7 @@ std::size_t IntersectionHandler::findObviousTurn(const EdgeID via_edge,
         const auto &continue_data =
             node_based_graph.GetEdgeData(intersection[best_continue].turn.eid);
         if (std::abs(deviation) < 1)
+            util::GeojsonLogger<extractor::ObviousPrinter>::Write(intersection[best_continue], node_based_graph.GetTarget(via_edge));
             return best_continue;
 
         // check if any other similar best continues exist
@@ -738,6 +744,7 @@ std::size_t IntersectionHandler::findObviousTurn(const EdgeID via_edge,
             }
         }
 
+        util::GeojsonLogger<extractor::ObviousPrinter>::Write(intersection[best_continue], node_based_graph.GetTarget(via_edge));
         return best_continue;
     }
 
