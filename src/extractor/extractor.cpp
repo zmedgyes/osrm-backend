@@ -225,6 +225,9 @@ int Extractor::run(ScriptingEnvironment &scripting_environment)
             return 1;
         }
 
+        extraction_containers.name_offsets.flush();
+        extraction_containers.name_char_data.flush();
+
         extraction_containers.PrepareData(scripting_environment,
                                           config.output_file_name,
                                           config.restriction_file_name,

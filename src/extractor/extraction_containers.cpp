@@ -87,6 +87,22 @@ struct CmpEdgeByInternalSourceTargetAndName
             return true;
 
         std::lock_guard<std::mutex> lock(mutex);
+
+        {
+            static bool first = true;
+            bool assert = !name_offsets.empty() && name_offsets.back() == name_data.size();
+            if (first || !assert)
+            {
+                if (name_offsets.empty())
+                    std::cout << "name_offsets.empty(), name_data.size() = " << name_data.size() << std::endl;
+                else
+                    std::cout << "name_offsets.size() = " << name_offsets.size()
+                              << ", name_offsets.back() = " << name_offsets.back()
+                              << ", name_data.size() = " << name_data.size()
+                              << std::endl;
+            }
+            first = false;
+        }
         BOOST_ASSERT(!name_offsets.empty() && name_offsets.back() == name_data.size());
         const oe::ExtractionContainers::STXXLNameCharData::const_iterator data = name_data.begin();
         return std::lexicographical_compare(data + name_offsets[lhs.result.name_id],
