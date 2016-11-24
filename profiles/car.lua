@@ -551,7 +551,16 @@ end
 
 -- junctions
 function handle_roundabouts(way,result)
-  if way:get_value_by_key("junction") == "roundabout" then
+  local junction = way:get_value_by_key("junction");
+
+  if junction == "roundabout" then
+    result.roundabout = true
+  end
+
+  -- See Issue 3361: roundabout-shaped not following roundabout rules.
+  -- This will get us "At Strausberger Platz do Maneuver X" instead of multiple quick turns.
+  -- In a new API version we can think of having a separate type passing it through to the user.
+  if junction == "circular" then
     result.roundabout = true
   end
 end
@@ -638,6 +647,7 @@ function handle_oneway(way,result)
            oneway == "1" or
            oneway == "true" or
            way:get_value_by_key("junction") == "roundabout" or
+           way:get_value_by_key("junction") == "circular" or
            (way:get_value_by_key("highway") == "motorway" and oneway ~= "no") then
 
       result.backward_mode = mode.inaccessible

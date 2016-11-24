@@ -157,7 +157,7 @@ function way_function (way, result)
   end
 
     -- roundabouts
-  if "roundabout" == junction then
+  if "roundabout" == junction or "circular" == junction then
     result.roundabout = true
   end
 
