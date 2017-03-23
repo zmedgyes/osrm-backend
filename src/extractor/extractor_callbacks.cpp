@@ -266,51 +266,53 @@ void ExtractorCallbacks::ProcessWay(const osmium::Way &input_way, const Extracti
     // Deduplicates street names, refs, destinations, pronunciation based on the string_map.
     // In case we do not already store the key, inserts (key, id) tuple and return id.
     // Otherwise fetches the id based on the name and returns it without insertion.
-    const auto turn_lane_id_forward = requestId(parsed_way.turn_lanes_forward);
-    const auto turn_lane_id_backward = requestId(parsed_way.turn_lanes_backward);
+    //const auto turn_lane_id_forward = requestId(parsed_way.turn_lanes_forward);
+    //const auto turn_lane_id_backward = requestId(parsed_way.turn_lanes_backward);
+    const auto turn_lane_id_forward = INVALID_LANE_DESCRIPTIONID;
+    const auto turn_lane_id_backward = INVALID_LANE_DESCRIPTIONID;
 
     const auto road_classification = parsed_way.road_classification;
 
     // Get the unique identifier for the street name, destination, and ref
-    const auto name_iterator = string_map.find(
-        MapKey(parsed_way.name, parsed_way.destinations, parsed_way.ref, parsed_way.pronunciation));
+    //const auto name_iterator = string_map.find(
+    //    MapKey(parsed_way.name, parsed_way.destinations, parsed_way.ref, parsed_way.pronunciation));
     NameID name_id = EMPTY_NAMEID;
-    if (string_map.end() == name_iterator)
-    {
-        // name_offsets has a sentinel element with the total name data size
-        // take the sentinels index as the name id of the new name data pack
-        // (name [name_id], destination [+1], pronunciation [+2], ref [+3])
-        name_id = external_memory.name_offsets.size() - 1;
+    //if (string_map.end() == name_iterator)
+    //{
+    //    // name_offsets has a sentinel element with the total name data size
+    //    // take the sentinels index as the name id of the new name data pack
+    //    // (name [name_id], destination [+1], pronunciation [+2], ref [+3])
+    //    name_id = external_memory.name_offsets.size() - 1;
 
-        std::copy(parsed_way.name.begin(),
-                  parsed_way.name.end(),
-                  std::back_inserter(external_memory.name_char_data));
-        external_memory.name_offsets.push_back(external_memory.name_char_data.size());
+    //    std::copy(parsed_way.name.begin(),
+    //              parsed_way.name.end(),
+    //              std::back_inserter(external_memory.name_char_data));
+    //    external_memory.name_offsets.push_back(external_memory.name_char_data.size());
 
-        std::copy(parsed_way.destinations.begin(),
-                  parsed_way.destinations.end(),
-                  std::back_inserter(external_memory.name_char_data));
-        external_memory.name_offsets.push_back(external_memory.name_char_data.size());
+    //    std::copy(parsed_way.destinations.begin(),
+    //              parsed_way.destinations.end(),
+    //              std::back_inserter(external_memory.name_char_data));
+    //    external_memory.name_offsets.push_back(external_memory.name_char_data.size());
 
-        std::copy(parsed_way.pronunciation.begin(),
-                  parsed_way.pronunciation.end(),
-                  std::back_inserter(external_memory.name_char_data));
-        external_memory.name_offsets.push_back(external_memory.name_char_data.size());
+    //    std::copy(parsed_way.pronunciation.begin(),
+    //              parsed_way.pronunciation.end(),
+    //              std::back_inserter(external_memory.name_char_data));
+    //    external_memory.name_offsets.push_back(external_memory.name_char_data.size());
 
-        std::copy(parsed_way.ref.begin(),
-                  parsed_way.ref.end(),
-                  std::back_inserter(external_memory.name_char_data));
-        external_memory.name_offsets.push_back(external_memory.name_char_data.size());
+    //    std::copy(parsed_way.ref.begin(),
+    //              parsed_way.ref.end(),
+    //              std::back_inserter(external_memory.name_char_data));
+    //    external_memory.name_offsets.push_back(external_memory.name_char_data.size());
 
-        auto k = MapKey{
-            parsed_way.name, parsed_way.destinations, parsed_way.ref, parsed_way.pronunciation};
-        auto v = MapVal{name_id};
-        string_map.emplace(std::move(k), std::move(v));
-    }
-    else
-    {
-        name_id = name_iterator->second;
-    }
+    //    auto k = MapKey{
+    //        parsed_way.name, parsed_way.destinations, parsed_way.ref, parsed_way.pronunciation};
+    //    auto v = MapVal{name_id};
+    //    string_map.emplace(std::move(k), std::move(v));
+    //}
+    //else
+    //{
+    //    name_id = name_iterator->second;
+    //}
 
     const bool in_forward_direction =
         (parsed_way.forward_speed > 0 || parsed_way.forward_rate > 0 || parsed_way.duration > 0 ||
@@ -326,8 +328,7 @@ void ExtractorCallbacks::ProcessWay(const osmium::Way &input_way, const Extracti
     const bool split_edge = in_forward_direction && in_backward_direction &&
                             ((parsed_way.forward_rate != parsed_way.backward_rate) ||
                              (parsed_way.forward_speed != parsed_way.backward_speed) ||
-                             (parsed_way.forward_travel_mode != parsed_way.backward_travel_mode) ||
-                             (turn_lane_id_forward != turn_lane_id_backward));
+                             (parsed_way.forward_travel_mode != parsed_way.backward_travel_mode));
 
     if (in_forward_direction)
     {

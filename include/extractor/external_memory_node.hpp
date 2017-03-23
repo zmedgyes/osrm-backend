@@ -40,8 +40,8 @@ struct ExternalMemoryNode : QueryNode
                                   false);
     }
 
-    bool barrier;
-    bool traffic_lights;
+    std::uint8_t barrier : 1;
+    std::uint8_t traffic_lights : 1;
 };
 
 struct ExternalMemoryNodeSTXXLCompare

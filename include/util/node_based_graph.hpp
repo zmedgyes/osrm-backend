@@ -85,14 +85,14 @@ NodeBasedDynamicGraphFromEdges(NodeID number_of_nodes,
            const extractor::NodeBasedEdge &input_edge) {
             output_edge.data.weight = input_edge.weight;
             output_edge.data.duration = input_edge.duration;
-            output_edge.data.roundabout = input_edge.roundabout;
-            output_edge.data.circular = input_edge.circular;
-            output_edge.data.name_id = input_edge.name_id;
+            output_edge.data.startpoint = true;
+            output_edge.data.roundabout = true;
+            output_edge.data.circular = false;
+            output_edge.data.name_id = 0;
+            output_edge.data.restricted = false;
             output_edge.data.travel_mode = input_edge.travel_mode;
-            output_edge.data.startpoint = input_edge.startpoint;
-            output_edge.data.restricted = input_edge.restricted;
-            output_edge.data.road_classification = input_edge.road_classification;
-            output_edge.data.lane_description_id = input_edge.lane_description_id;
+            output_edge.data.road_classification.SetClass(extractor::guidance::RoadPriorityClass::PRIMARY);
+            output_edge.data.lane_description_id = INVALID_LANE_DESCRIPTIONID;
 
             BOOST_ASSERT(output_edge.data.weight > 0);
             BOOST_ASSERT(output_edge.data.duration > 0);

@@ -43,10 +43,10 @@ class ExtractionContainers
     void WriteCharData(const std::string &file_name);
 
   public:
-    using STXXLNodeIDVector = stxxl::vector<OSMNodeID>;
-    using STXXLNodeVector = stxxl::vector<ExternalMemoryNode>;
+    using STXXLNodeIDVector = std::vector<OSMNodeID>;
+    using STXXLNodeVector = std::vector<ExternalMemoryNode>;
     using STXXLEdgeVector = stxxl::vector<InternalExtractorEdge>;
-    using STXXLRestrictionsVector = stxxl::vector<InputRestrictionContainer>;
+    using STXXLRestrictionsVector = std::vector<InputRestrictionContainer>;
     using STXXLWayIDStartEndVector = stxxl::vector<FirstAndLastSegmentOfWay>;
     using STXXLNameCharData = stxxl::vector<unsigned char>;
     using STXXLNameOffsets = stxxl::vector<unsigned>;

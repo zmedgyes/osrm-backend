@@ -35,19 +35,13 @@ struct NodeBasedEdge
 
     NodeID source;                                    // 32 4
     NodeID target;                                    // 32 4
-    NodeID name_id;                                   // 32 4
-    EdgeWeight weight;                                // 32 4
-    EdgeWeight duration;                              // 32 4
+    EdgeWeight weight : 28;                           // 32 4
     std::uint8_t forward : 1;                         // 1
     std::uint8_t backward : 1;                        // 1
-    std::uint8_t roundabout : 1;                      // 1
-    std::uint8_t circular : 1;                        // 1
     std::uint8_t startpoint : 1;                      // 1
-    std::uint8_t restricted : 1;                      // 1
     std::uint8_t is_split : 1;                        // 1
+    EdgeWeight duration : 28;                         // 32 4
     TravelMode travel_mode : 4;                       // 4
-    LaneDescriptionID lane_description_id;            // 16 2
-    guidance::RoadClassification road_classification; // 16 2
 };
 
 struct NodeBasedEdgeWithOSM : NodeBasedEdge
@@ -75,10 +69,8 @@ struct NodeBasedEdgeWithOSM : NodeBasedEdge
 // Impl.
 
 inline NodeBasedEdge::NodeBasedEdge()
-    : source(SPECIAL_NODEID), target(SPECIAL_NODEID), name_id(0), weight(0), duration(0),
-      forward(false), backward(false), roundabout(false), circular(false), startpoint(true),
-      restricted(false), is_split(false), travel_mode(TRAVEL_MODE_INACCESSIBLE),
-      lane_description_id(INVALID_LANE_DESCRIPTIONID)
+    : source(SPECIAL_NODEID), target(SPECIAL_NODEID), weight(0), duration(0),
+      forward(false), backward(false), startpoint(true), is_split(false)
 {
 }
 
@@ -97,10 +89,9 @@ inline NodeBasedEdge::NodeBasedEdge(NodeID source,
                                     TravelMode travel_mode,
                                     const LaneDescriptionID lane_description_id,
                                     guidance::RoadClassification road_classification)
-    : source(source), target(target), name_id(name_id), weight(weight), duration(duration),
-      forward(forward), backward(backward), roundabout(roundabout), circular(circular),
-      startpoint(startpoint), restricted(restricted), is_split(is_split), travel_mode(travel_mode),
-      lane_description_id(lane_description_id), road_classification(std::move(road_classification))
+    : source(source), target(target), weight(weight), duration(duration),
+      forward(forward), backward(backward),
+      startpoint(startpoint), is_split(is_split), travel_mode(travel_mode)
 {
 }
 
@@ -155,7 +146,7 @@ inline NodeBasedEdgeWithOSM::NodeBasedEdgeWithOSM(OSMNodeID source,
 {
 }
 
-static_assert(sizeof(extractor::NodeBasedEdge) == 28,
+static_assert(sizeof(extractor::NodeBasedEdge) == 16,
               "Size of extractor::NodeBasedEdge type is "
               "bigger than expected. This will influence "
               "memory consumption.");

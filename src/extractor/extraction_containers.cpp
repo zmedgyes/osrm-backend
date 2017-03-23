@@ -12,6 +12,8 @@
 #include "util/name_table.hpp"
 #include "util/timing_util.hpp"
 
+#include <tbb/parallel_sort.h>
+
 #include <boost/assert.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -71,31 +73,7 @@ struct CmpEdgeByInternalSourceTargetAndName
         if (lhs.result.source != rhs.result.source)
             return lhs.result.source < rhs.result.source;
 
-        if (lhs.result.source == SPECIAL_NODEID)
-            return false;
-
-        if (lhs.result.target != rhs.result.target)
-            return lhs.result.target < rhs.result.target;
-
-        if (lhs.result.target == SPECIAL_NODEID)
-            return false;
-
-        if (lhs.result.name_id == rhs.result.name_id)
-            return false;
-
-        if (lhs.result.name_id == EMPTY_NAMEID)
-            return false;
-
-        if (rhs.result.name_id == EMPTY_NAMEID)
-            return true;
-
-        std::lock_guard<std::mutex> lock(mutex);
-        BOOST_ASSERT(!name_offsets.empty() && name_offsets.back() == name_data.size());
-        const oe::ExtractionContainers::STXXLNameCharData::const_iterator data = name_data.begin();
-        return std::lexicographical_compare(data + name_offsets[lhs.result.name_id],
-                                            data + name_offsets[lhs.result.name_id + 1],
-                                            data + name_offsets[rhs.result.name_id],
-                                            data + name_offsets[rhs.result.name_id + 1]);
+        return lhs.result.target < rhs.result.target;
     }
 
     value_type max_value() { return value_type::max_internal_value(); }
@@ -130,12 +108,9 @@ ExtractionContainers::ExtractionContainers()
 
 void ExtractionContainers::FlushVectors()
 {
-    used_node_id_list.flush();
-    all_nodes_list.flush();
     all_edges_list.flush();
     name_char_data.flush();
     name_offsets.flush();
-    restrictions_list.flush();
     way_start_end_id_list.flush();
 }
 
@@ -198,8 +173,8 @@ void ExtractionContainers::PrepareNodes()
         util::UnbufferedLog log;
         log << "Sorting used nodes        ... " << std::flush;
         TIMER_START(sorting_used_nodes);
-        stxxl::sort(
-            used_node_id_list.begin(), used_node_id_list.end(), OSMNodeIDSTXXLLess(), stxxl_memory);
+        tbb::parallel_sort(
+            used_node_id_list.begin(), used_node_id_list.end());
         TIMER_STOP(sorting_used_nodes);
         log << "ok, after " << TIMER_SEC(sorting_used_nodes) << "s";
     }
@@ -218,10 +193,8 @@ void ExtractionContainers::PrepareNodes()
         util::UnbufferedLog log;
         log << "Sorting all nodes         ... " << std::flush;
         TIMER_START(sorting_nodes);
-        stxxl::sort(all_nodes_list.begin(),
-                    all_nodes_list.end(),
-                    ExternalMemoryNodeSTXXLCompare(),
-                    stxxl_memory);
+        tbb::parallel_sort(all_nodes_list.begin(),
+                    all_nodes_list.end(), ExternalMemoryNodeSTXXLCompare());
         TIMER_STOP(sorting_nodes);
         log << "ok, after " << TIMER_SEC(sorting_nodes) << "s";
     }
@@ -722,10 +695,9 @@ void ExtractionContainers::PrepareRestrictions()
         util::UnbufferedLog log;
         log << "Sorting " << restrictions_list.size() << " restriction. by from... ";
         TIMER_START(sort_restrictions);
-        stxxl::sort(restrictions_list.begin(),
+        tbb::parallel_sort(restrictions_list.begin(),
                     restrictions_list.end(),
-                    CmpRestrictionContainerByFrom(),
-                    stxxl_memory);
+                    CmpRestrictionContainerByFrom());
         TIMER_STOP(sort_restrictions);
         log << "ok, after " << TIMER_SEC(sort_restrictions) << "s";
     }
@@ -819,10 +791,9 @@ void ExtractionContainers::PrepareRestrictions()
         util::UnbufferedLog log;
         log << "Sorting restrictions. by to  ... " << std::flush;
         TIMER_START(sort_restrictions_to);
-        stxxl::sort(restrictions_list.begin(),
+        tbb::parallel_sort(restrictions_list.begin(),
                     restrictions_list.end(),
-                    CmpRestrictionContainerByTo(),
-                    stxxl_memory);
+                    CmpRestrictionContainerByTo());
         TIMER_STOP(sort_restrictions_to);
         log << "ok, after " << TIMER_SEC(sort_restrictions_to) << "s";
     }

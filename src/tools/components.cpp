@@ -71,7 +71,7 @@ std::size_t loadGraph(const std::string &path,
             graph_edge_list.emplace_back(input_edge.source,
                                          input_edge.target,
                                          (std::max)(input_edge.weight, 1),
-                                         input_edge.name_id);
+                                         0);
         }
 
         if (input_edge.backward)
@@ -79,7 +79,7 @@ std::size_t loadGraph(const std::string &path,
             graph_edge_list.emplace_back(input_edge.target,
                                          input_edge.source,
                                          (std::max)(input_edge.weight, 1),
-                                         input_edge.name_id);
+                                         0);
         }
     }
 
