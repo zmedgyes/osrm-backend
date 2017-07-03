@@ -1,3 +1,8 @@
+# 5.8.2
+ - Changes from 5.8.1:
+   - Bugfixes:
+      - Fixes #4027: Fix safety penalties on bicycle profile.
+
 # 5.8.1
  - Changes from 5.8.0:
     - Bugfixes:
