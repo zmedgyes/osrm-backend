@@ -2,6 +2,7 @@
  - Changes from 5.8.1:
    - Bugfixes:
       - Fixes #4027: Fix safety penalties on bicycle profile.
+      - Fixes #4205: Turn on through street was marked as straight, but should have been a right turn.
 
 # 5.8.1
  - Changes from 5.8.0:
