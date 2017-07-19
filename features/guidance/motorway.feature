@@ -281,3 +281,55 @@ Feature: Motorway Guidance
             | waypoints | route | turns         |
             | a,d       | ,     | depart,arrive |
             | b,d       | ,     | depart,arrive |
+
+     @sub-exit
+     Scenario: Subexit
+        Given the node map
+            """
+            a - - b - - - - - - - - - - - - - - - - - - - c
+                    ` d - - - - e - - - - f
+                                  ' g - - h
+            """
+
+        And the ways
+            | nodes | name          | ref  | highway       | lanes | oneway |
+            | abc   | motorway      | US 1 | motorway      | 6     | yes    |
+            | bdef  | ramp          |      | motorway_link | 2     | yes    |
+            | egh   | sub-ramp      |      | motorway_link | 1     | yes    |
+
+        When I route I should get
+            | waypoints | route                           | turns                                                 |
+            | a,c       | motorway,motorway               | depart,arrive                                         |
+            | a,f       | motorway,ramp,ramp              | depart,off ramp slight right,arrive                   |
+            | a,h       | motorway,ramp,sub-ramp,sub-ramp | depart,off ramp slight right,turn slight right,arrive |
+
+     Scenario: Subentry
+        Given the node map
+            """
+                    k
+                    |
+                   |-|
+            a - - - - - - - - - - - - - - - - - - b - - c
+                   |-|
+                    d - - - - e - - - - f
+                   |-|
+            g - - - - - - - - - - - - - h - - - - - - - - - - i
+                   |-|
+                    |
+                    j
+            """
+
+        And the ways
+            | nodes | name           | ref  | highway       | lanes | oneway |
+            | abc   | motorway north | US 1 | motorway      | 6     | yes    |
+            | defb  | on-ramp        |      | motorway_link | 2     | yes    |
+            | eh    | sub-ramp       |      | motorway_link | 1     | yes    |
+            | ghi   | motorway south | US 2 | motorway      | 6     | yes    |
+            | jdk   | road           |      | primary       |       | no     |
+
+        When I route I should get
+            | waypoints | route                                               | turns                                                            |
+            | a,c       | motorway north,motorway north                       | depart,arrive                                                    |
+            | j,c       | road,on-ramp,motorway north,motorway north          | depart,on ramp right,merge slight left,arrive                    |
+            | j,i       | road,on-ramp,sub-ramp,motorway south,motorway south | depart,on ramp right,turn slight right,merge slight right,arrive |
+            | g,i       | motorway south,motorway south                       | depart,arrive                                                    |
