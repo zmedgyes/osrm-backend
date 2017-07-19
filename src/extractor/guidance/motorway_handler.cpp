@@ -455,7 +455,37 @@ Intersection MotorwayHandler::fromRamp(const EdgeID via_eid, Intersection inters
                 }
                 else
                 {
-                    assignFork(via_eid, intersection[2], intersection[1]);
+                    // check if a ramp is more an exit from a ramp, rather than a fork
+                    const auto is_sub_exit = [&](const auto &possible_exit, const auto& possible_main, const auto& coming_from)
+                    {
+                        // we should be going more straight, possibly
+                        if( angularDeviation(possible_exit.turn.angle,STRAIGHT_ANGLE) < angularDeviation(possible_main,STRAIGHT_ANGLE))
+                            return false;
+
+                        const auto &from_data = node_based_graph.GetEdgeData(via_eid);
+                        const auto &main_data = node_based_graph.GetEdgeData(possible_main.turn.eid);
+                        const auto &exit_data = node_based_graph.GetEdgeData(possible_exit.turn.eid);
+
+                        const auto lanes = [](auto const& road){ return road.road_classification.GetNumberOfLanes(); };
+
+                        if(lanes(from_data) >= lanes(main_data) + lanes(exit_data))
+                            return false;
+                    };
+                    // check if we are actually passing a ramp that can be considered a sub-exit
+                    if (is_sub_exit(intersection[1], intersection[2], intersection[0]))
+                    {
+                        intersection[1].instruction = {TurnType::OffRamp,getTurnDirection(intersection[1].angle)};
+                        intersection[2].instruction = getInstructionForObvious(intersection.size(),via_eid,isThroughStreet(2,intersection),intersection[2]);
+                    }
+                    else if (is_sub_exit(intersection[2], intersection[1], intersection[0]))
+                    {
+                        intersection[1].instruction = getInstructionForObvious(intersection.size(),via_eid,isThroughStreet(1,intersection),intersection[1]);
+                        intersection[2].instruction = {TurnType::OffRamp,getTurnDirection(intersection[2].angle)};
+                    }
+                    else
+                    {
+                        assignFork(via_eid, intersection[2], intersection[1]);
+                    }
                 }
             }
         }
