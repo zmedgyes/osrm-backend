@@ -5,6 +5,9 @@
 #include <boost/fusion/adapted/std_pair.hpp>
 #include <boost/fusion/include/adapt_adt.hpp>
 
+#include "util/log.hpp"
+#include "util/timing_util.hpp"
+
 // clang-format off
 BOOST_FUSION_ADAPT_STRUCT(osrm::updater::Segment,
                          (decltype(osrm::updater::Segment::from), from)
@@ -33,6 +36,7 @@ namespace csv
 {
 SegmentLookupTable readSegmentValues(const std::vector<std::string> &paths)
 {
+    TIMER_START(timer);
     CSVFilesParser<Segment, SpeedSource> parser(
         1, qi::ulong_long >> ',' >> qi::ulong_long, qi::uint_ >> -(',' >> qi::double_));
 
@@ -47,6 +51,8 @@ SegmentLookupTable readSegmentValues(const std::vector<std::string> &paths)
         util::Log(logWARNING) << "Empty segment in CSV with node " +
                                      std::to_string(found_inconsistency->first.from);
     }
+    TIMER_STOP(timer);
+    util::Log() << "readSegmentValues " << TIMER_SEC(timer) << " seconds";
 
     return result;
 }

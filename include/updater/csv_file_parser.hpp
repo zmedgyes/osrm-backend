@@ -18,6 +18,9 @@
 
 #include <vector>
 
+#include "util/log.hpp"
+#include "util/timing_util.hpp"
+
 namespace osrm
 {
 namespace updater
@@ -43,6 +46,7 @@ template <typename Key, typename Value> struct CSVFilesParser
     {
         try
         {
+            TIMER_START(timer1);
             tbb::spin_mutex mutex;
             std::vector<std::pair<Key, Value>> lookup;
             tbb::parallel_for(std::size_t{0},
@@ -57,22 +61,30 @@ template <typename Key, typename Value> struct CSVFilesParser
                                                     std::make_move_iterator(end(local)));
                                   }
                               });
+            TIMER_STOP(timer1);
+            util::Log() << "parsing CSV " << TIMER_SEC(timer1) << " seconds";
 
             // With flattened map-ish view of all the files, make a stable sort on key and source
             // and unique them on key to keep only the value with the largest file index
             // and the largest line number in a file.
             // The operands order is swapped to make descending ordering on (key, source)
+            TIMER_START(timer2);
             std::stable_sort(begin(lookup), end(lookup), [](const auto &lhs, const auto &rhs) {
                 return rhs.first < lhs.first ||
                        (rhs.first == lhs.first && rhs.second.source < lhs.second.source);
             });
+            TIMER_STOP(timer2);
+            util::Log() << "sorting values " << TIMER_SEC(timer2) << " seconds";
 
+            TIMER_START(timer3);
             // Unique only on key to take the source precedence into account and remove duplicates.
             const auto it =
                 std::unique(begin(lookup), end(lookup), [](const auto &lhs, const auto &rhs) {
                     return lhs.first == rhs.first;
                 });
             lookup.erase(it, end(lookup));
+            TIMER_STOP(timer3);
+            util::Log() << "erasing values " << TIMER_SEC(timer3) << " seconds";
 
             util::Log() << "In total loaded " << csv_filenames.size() << " file(s) with a total of "
                         << lookup.size() << " unique values";

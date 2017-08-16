@@ -612,12 +612,13 @@ Updater::LoadAndUpdateEdgeExpandedGraph(std::vector<extractor::EdgeBasedEdge> &e
         // Now save out the updated compressed geometries
         extractor::files::writeSegmentData(config.GetPath(".osrm.geometry"), segment_data);
         TIMER_STOP(segment);
-        util::Log() << "Updating segment data took " << TIMER_MSEC(segment) << "ms.";
+        util::Log() << "Updating segment data took " << TIMER_SEC(segment) << "ms.";
     }
 
     auto turn_penalty_lookup = csv::readTurnValues(config.turn_penalty_lookup_paths);
     if (update_turn_penalties)
     {
+        TIMER_START(turns);
         auto updated_turn_penalties = updateTurnPenalties(config,
                                                           profile_properties,
                                                           turn_penalty_lookup,
@@ -635,10 +636,13 @@ Updater::LoadAndUpdateEdgeExpandedGraph(std::vector<extractor::EdgeBasedEdge> &e
                            const auto node_id = edge_based_edge_list[turn_id].source;
                            return node_data.GetGeometryID(node_id);
                        });
+        TIMER_STOP(turns);
+        util::Log() << "Updating turns data took " << TIMER_SEC(turns) << " seconds";
     }
 
     if (update_conditional_turns)
     {
+        TIMER_START(turns);
         // initialize instance of class that handles time zone resolution
         if (config.valid_now <= 0)
         {
@@ -660,13 +664,18 @@ Updater::LoadAndUpdateEdgeExpandedGraph(std::vector<extractor::EdgeBasedEdge> &e
                            const auto node_id = edge_based_edge_list[turn_id].source;
                            return node_data.GetGeometryID(node_id);
                        });
+        TIMER_STOP(turns);
+        util::Log() << "Updating conditional turns data took " << TIMER_SEC(turns) << " seconds";
     }
 
+    TIMER_START(timer1);
     tbb::parallel_sort(updated_segments.begin(),
                        updated_segments.end(),
                        [](const GeometryID lhs, const GeometryID rhs) {
                            return std::tie(lhs.id, lhs.forward) < std::tie(rhs.id, rhs.forward);
                        });
+    TIMER_STOP(timer1);
+    util::Log() << "Sorting updated segments " << TIMER_SEC(timer1) << " seconds";
 
     using WeightAndDuration = std::tuple<EdgeWeight, EdgeWeight>;
     const auto compute_new_weight_and_duration =
@@ -706,6 +715,7 @@ Updater::LoadAndUpdateEdgeExpandedGraph(std::vector<extractor::EdgeBasedEdge> &e
         return std::make_tuple(new_weight, new_duration);
     };
 
+    TIMER_START(timer2);
     std::vector<WeightAndDuration> accumulated_segment_data(updated_segments.size());
     tbb::parallel_for(tbb::blocked_range<std::size_t>(0, updated_segments.size()),
                       [&](const auto &range) {
@@ -715,6 +725,8 @@ Updater::LoadAndUpdateEdgeExpandedGraph(std::vector<extractor::EdgeBasedEdge> &e
                                   compute_new_weight_and_duration(updated_segments[index]);
                           }
                       });
+    TIMER_STOP(timer2);
+    util::Log() << "accumulated_segment_data took " << TIMER_SEC(timer2) << " seconds";
 
     const auto update_edge = [&](extractor::EdgeBasedEdge &edge) {
         const auto node_id = edge.source;
@@ -782,6 +794,7 @@ Updater::LoadAndUpdateEdgeExpandedGraph(std::vector<extractor::EdgeBasedEdge> &e
 
     if (updated_segments.size() > 0)
     {
+        TIMER_START(timer3);
         tbb::parallel_for(tbb::blocked_range<std::size_t>(0, edge_based_edge_list.size()),
                           [&](const auto &range) {
                               for (auto index = range.begin(); index < range.end(); ++index)
@@ -789,10 +802,13 @@ Updater::LoadAndUpdateEdgeExpandedGraph(std::vector<extractor::EdgeBasedEdge> &e
                                   update_edge(edge_based_edge_list[index]);
                               }
                           });
+        TIMER_STOP(timer3);
+        util::Log() << "update_edge took " << TIMER_SEC(timer3) << " seconds";
     }
 
     if (update_turn_penalties || update_conditional_turns)
     {
+        TIMER_START(timer4);
         const auto save_penalties = [](const auto &filename, const auto &data) -> void {
             storage::io::FileWriter writer(filename, storage::io::FileWriter::GenerateFingerprint);
             storage::serialization::write(writer, data);
@@ -807,20 +823,25 @@ Updater::LoadAndUpdateEdgeExpandedGraph(std::vector<extractor::EdgeBasedEdge> &e
                 save_penalties(config.GetPath(".osrm.turn_duration_penalties"),
                                turn_duration_penalties);
             });
+        TIMER_STOP(timer4);
+        util::Log() << "saving penalties took " << TIMER_SEC(timer4) << " seconds";
     }
 
 #if !defined(NDEBUG)
+    TIMER_START(timer5);
     if (config.turn_penalty_lookup_paths.empty())
     { // don't check weights consistency with turn updates that can break assertion
         // condition with turn weight penalties negative updates
         checkWeightsConsistency(config, edge_based_edge_list);
     }
+    TIMER_STOP(timer5);
+    util::Log() << "saving penalties took " << TIMER_SEC(timer5) << " seconds";
 #endif
 
     saveDatasourcesNames(config);
 
     TIMER_STOP(load_edges);
-    util::Log() << "Done reading edges in " << TIMER_MSEC(load_edges) << "ms.";
+    util::Log() << "Done reading edges in " << TIMER_SEC(load_edges) << " seconds.";
     return max_edge_id;
 }
 }

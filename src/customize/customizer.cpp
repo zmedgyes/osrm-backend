@@ -97,10 +97,16 @@ int Customizer::Run(const CustomizationConfig &config)
 {
     TIMER_START(loading_data);
 
+    TIMER_START(timer1);
     partition::MultiLevelPartition mlp;
     partition::files::readPartition(config.GetPath(".osrm.partition"), mlp);
+    TIMER_STOP(timer1);
+    util::Log() << "readPartition took " << TIMER_SEC(timer1) << " seconds";
 
+    TIMER_START(timer2);
     auto edge_based_graph = LoadAndUpdateEdgeExpandedGraph(config, mlp);
+    TIMER_STOP(timer2);
+    util::Log() << "LoadAndUpdateEdgeExpandedGraph took " << TIMER_SEC(timer2) << " seconds";
 
     partition::CellStorage storage;
     partition::files::readCells(config.GetPath(".osrm.cells"), storage);
