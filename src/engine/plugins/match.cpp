@@ -109,6 +109,8 @@ void filterCandidates(const std::vector<util::Coordinate> &coordinates,
     }
 }
 
+// implement HandleRequest that returns MatchResult type
+// refactor this version of HandleRequest to call the other and wrap in Status type
 Status MatchPlugin::HandleRequest(const RoutingAlgorithmsInterface &algorithms,
                                   const api::MatchParameters &parameters,
                                   util::json::Object &json_result) const
