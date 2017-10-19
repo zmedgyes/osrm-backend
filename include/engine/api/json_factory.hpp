@@ -4,6 +4,7 @@
 #include "extractor/guidance/turn_instruction.hpp"
 #include "extractor/travel_mode.hpp"
 #include "engine/api/nearest_result.hpp"
+#include "engine/api/route_result.hpp"
 #include "engine/api/table_result.hpp"
 #include "engine/error.hpp"
 #include "engine/guidance/leg_geometry.hpp"
@@ -115,8 +116,12 @@ util::json::Array makeRouteLegs(std::vector<guidance::RouteLeg> legs,
                                 std::vector<util::json::Value> step_geometries,
                                 std::vector<util::json::Object> annotations);
 
+util::json::Object toJSON(const Route &route);
+util::json::Object toJSON(const Waypoint &waypoint);
+
 util::json::Object toJSON(const NearestResult &);
 util::json::Object toJSON(const TableResult &);
+util::json::Object toJSON(const RouteResult &result);
 
 util::json::Object toJSON(const Error &);
 }

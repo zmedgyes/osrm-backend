@@ -410,6 +410,10 @@ util::json::Array makeRouteLegs(std::vector<guidance::RouteLeg> legs,
     return json_legs;
 }
 
+util::json::Object toJSON(const Route &route)
+{
+}
+
 util::json::Object toJSON(const Waypoint &waypoint)
 {
     util::json::Object json_waypoint;
@@ -474,6 +478,11 @@ util::json::Object toJSON(const TableResult &result)
     json_result.values["durations"] = json_durations;
     return json_result;
 }
+
+util::json::Object toJSON(const RouteResult &result)
+{
+}
+
 
 util::json::Object toJSON(const Error &error)
 {
