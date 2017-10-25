@@ -14,12 +14,12 @@ namespace engine
 {
 namespace api
 {
-struct RouteStep
+template <typename GeometryT> struct ApiRouteStep
 {
-    double distance;
-    double duration;
+    double duration; // duration in seconds
+    double distance; // distance in meters
+    double weight;   // weight value
     GeometryT geometry;
-    double weight;
     std::string name;
     std::string ref;
     std::string pronunciation;
@@ -27,7 +27,7 @@ struct RouteStep
     std::string exits;
     std::string mode;
     StepManeuver maneuver;
-    std::vector<Intersection> intersection;
+    std::vector<Intersection> intersections;
     std::string rotary_name;
     std::string rotary_pronunciation;
 };
