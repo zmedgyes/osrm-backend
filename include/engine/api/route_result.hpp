@@ -13,10 +13,11 @@ namespace engine
 namespace api
 {
 
+template <typename GeometryT>
 struct RouteResult
 {
     std::vector<Waypoint> waypoints;
-    std::vector<Route> routes;
+    std::vector<ApiRoute<GeometryT>> routes;
 };
 }
 }

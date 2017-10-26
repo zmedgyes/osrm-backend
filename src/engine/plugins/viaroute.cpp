@@ -30,47 +30,57 @@ Status ViaRoutePlugin::HandleRequest(const RoutingAlgorithmsInterface &algorithm
                                      const api::RouteParameters &route_parameters,
                                      util::json::Object &json_result) const
 {
+    auto maybe_result = HandleRequest(algorithms, route_parameters);
+    if (maybe_result)
+    {
+        json_result = api::json::toJSON(static_cast<const api::RouteResult&>(maybe_result));
+        return Status::Ok;
+    }
+    else
+    {
+        json_result = api::json::toJSON(static_cast<const engine::Error&>(maybe_result));
+        return Status::Error;
+    }
+}
+
+MaybeResult<api::RouteResult> ViaRoutePlugin::HandleRequest(const RoutingAlgorithmsInterface &algorithms,
+                                     const api::RouteParameters &route_parameters) const
+{
     BOOST_ASSERT(route_parameters.IsValid());
 
     if (!algorithms.HasShortestPathSearch() && route_parameters.coordinates.size() > 2)
     {
-        return Error("NotImplemented",
+        return Error{NOT_IMPLEMENTED,
                      "Shortest path search is not implemented for the chosen search algorithm. "
-                     "Only two coordinates supported.",
-                     json_result);
+                     "Only two coordinates supported."};
     }
 
     if (!algorithms.HasDirectShortestPathSearch() && !algorithms.HasShortestPathSearch())
     {
-        return Error(
-            "NotImplemented",
-            "Direct shortest path search is not implemented for the chosen search algorithm.",
-            json_result);
+        return Error{NOT_IMPLEMENTED,
+            "Direct shortest path search is not implemented for the chosen search algorithm."};
     }
 
     if (max_locations_viaroute > 0 &&
         (static_cast<int>(route_parameters.coordinates.size()) > max_locations_viaroute))
     {
-        return Error("TooBig",
+        return Error{TOO_BIG,
                      "Number of entries " + std::to_string(route_parameters.coordinates.size()) +
                          " is higher than current maximum (" +
-                         std::to_string(max_locations_viaroute) + ")",
-                     json_result);
+                         std::to_string(max_locations_viaroute) + ")"};
     }
 
     // Takes care of alternatives=n and alternatives=true
     if ((route_parameters.number_of_alternatives > static_cast<unsigned>(max_alternatives)) ||
         (route_parameters.alternatives && max_alternatives == 0))
     {
-        return Error("TooBig",
-                     "Requested number of alternatives is higher than current maximum (" +
-                         std::to_string(max_alternatives) + ")",
-                     json_result);
+        return Error{TOO_BIG, "Requested number of alternatives is higher than current maximum (" +
+                         std::to_string(max_alternatives) + ")"};
     }
 
     if (!CheckAllCoordinates(route_parameters.coordinates))
     {
-        return Error("InvalidValue", "Invalid coordinate value.", json_result);
+        return Error{INVALID_VALUE, "Invalid coordinate value."};
     }
 
     if (!CheckAlgorithms(route_parameters, algorithms, json_result))
@@ -80,10 +90,8 @@ Status ViaRoutePlugin::HandleRequest(const RoutingAlgorithmsInterface &algorithm
     auto phantom_node_pairs = GetPhantomNodes(facade, route_parameters);
     if (phantom_node_pairs.size() != route_parameters.coordinates.size())
     {
-        return Error("NoSegment",
-                     std::string("Could not find a matching segment for coordinate ") +
-                         std::to_string(phantom_node_pairs.size()),
-                     json_result);
+        return Error{NO_SEGMENT, std::string("Could not find a matching segment for coordinate ") +
+                         std::to_string(phantom_node_pairs.size())};
     }
     BOOST_ASSERT(phantom_node_pairs.size() == route_parameters.coordinates.size());
 
@@ -132,7 +140,9 @@ Status ViaRoutePlugin::HandleRequest(const RoutingAlgorithmsInterface &algorithm
 
     if (routes.routes[0].is_valid())
     {
-        route_api.MakeResponse(routes, json_result);
+        // TODO refactor MakeReponse to return c++ objects
+        auto route_result = route_api.MakeResponse(routes);
+        return route_result;
     }
     else
     {
@@ -145,15 +155,13 @@ Status ViaRoutePlugin::HandleRequest(const RoutingAlgorithmsInterface &algorithm
 
         if (not_in_same_component)
         {
-            return Error("NoRoute", "Impossible route between points", json_result);
+            return Error{NO_ROUTE, "Impossible route between points"};
         }
         else
         {
-            return Error("NoRoute", "No route found between points", json_result);
+            return Error{NO_ROUTE, "No route found between points"};
         }
     }
-
-    return Status::Ok;
 }
 }
 }

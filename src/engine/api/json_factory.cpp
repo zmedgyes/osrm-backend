@@ -289,7 +289,21 @@ util::json::Object makeIntersection(const guidance::IntermediateIntersection &in
     return result;
 }
 
-util::json::Object makeRouteStep(guidance::RouteStep step, util::json::Value geometry)
+// run makeRouteStep in a loop
+template <typename GeometryT>
+util::json::Array routeStepsToJSON(const std::vector<api::RouteStep<GeometryT>> &steps)
+{
+    util::json::Array json_steps;
+    json_steps.values.resize(steps.size());
+    std::transform(steps.begin(),
+                   steps.end(),
+                   json_steps.values.begin(),
+                   [](const auto &r) { return makeRouteStep(r); });
+    return json_steps;
+}
+
+template <typename GeometryT>
+util::json::Object makeRouteStep(api::RouteStep<GeometryT> &step)
 {
     util::json::Object route_step;
     route_step.values["distance"] = std::round(step.distance * 10) / 10.;
@@ -315,7 +329,7 @@ util::json::Object makeRouteStep(guidance::RouteStep step, util::json::Value geo
 
     route_step.values["mode"] = detail::modeToString(std::move(step.mode));
     route_step.values["maneuver"] = makeStepManeuver(std::move(step.maneuver));
-    route_step.values["geometry"] = std::move(geometry);
+    route_step.values["geometry"] = std::move(step.geometry);
 
     util::json::Array intersections;
     intersections.values.reserve(step.intersections.size());
@@ -328,59 +342,78 @@ util::json::Object makeRouteStep(guidance::RouteStep step, util::json::Value geo
     return route_step;
 }
 
-util::json::Object makeRoute(const guidance::Route &route,
-                             util::json::Array legs,
-                             boost::optional<util::json::Value> geometry,
-                             const char *weight_name)
+template <typename GeometryT>
+util::json::Array routesToJSON(const std::vector<ApiRoute<GeometryT>> &routes)
+{
+    util::json::Array json_routes;
+    json_routes.values.resize(routes.size());
+    std::transform(routes.begin(),
+                   routes.end(),
+                   json_routes.values.begin(),
+                   [](const auto &r) { return makeRoute<GeometryT>(r); });
+    return json_routes;
+}
+
+template <typename GeometryT>
+util::json::Object makeRoute(const ApiRoute<GeometryT> &route)
 {
     util::json::Object json_route;
     json_route.values["distance"] = route.distance;
     json_route.values["duration"] = route.duration;
     json_route.values["weight"] = route.weight;
-    json_route.values["weight_name"] = weight_name;
-    json_route.values["legs"] = std::move(legs);
-    if (geometry)
+    json_route.values["weight_name"] = route.weight_name;
+    json_route.values["legs"] = routeLegsToJSON(route.legs);
+    if (route.geometry != NULL)
     {
-        json_route.values["geometry"] = *std::move(geometry);
+        json_route.values["geometry"] = std::move(static_cast<util::json::Value>(route.geometry));
     }
     return json_route;
 }
 
-util::json::Object makeWaypoint(const util::Coordinate location, std::string name)
+// run makeRouteLeg in a loop
+template <typename GeometryT>
+util::json::Array routeLegsToJSON(const std::vector<guidance::RouteLeg<GeometryT>> &legs)
 {
-    util::json::Object waypoint;
-    waypoint.values["location"] = detail::coordinateToLonLat(location);
-    waypoint.values["name"] = std::move(name);
-    return waypoint;
+    util::json::Array json_legs;
+    return json_legs;
 }
 
-util::json::Object makeWaypoint(const util::Coordinate location, std::string name, const Hint &hint)
-{
-    auto waypoint = makeWaypoint(location, name);
-    waypoint.values["hint"] = hint.ToBase64();
-    return waypoint;
-}
-
-util::json::Object makeRouteLeg(guidance::RouteLeg leg, util::json::Array steps)
+template <typename GeometryT>
+util::json::Object makeRouteLeg(guidance::RouteLeg<GeometryT> &leg)
 {
     util::json::Object route_leg;
     route_leg.values["distance"] = leg.distance;
     route_leg.values["duration"] = leg.duration;
     route_leg.values["weight"] = leg.weight;
     route_leg.values["summary"] = std::move(leg.summary);
-    route_leg.values["steps"] = std::move(steps);
+    auto json_steps = routeStepsToJSON(leg.steps);
+    route_leg.values["steps"] = std::move(json_steps);
+    route_leg.values["annotation"] = std::move(leg.annotations);
     return route_leg;
 }
 
-util::json::Object
-makeRouteLeg(guidance::RouteLeg leg, util::json::Array steps, util::json::Object annotation)
+/*
+template <typename GeometryT>
+std::vector<guidance::RouteLeg<GeometryT>> makeRouteLegs(std::vector<guidance::RouteLeg<GeometryT> legs,
+                                  std::vector<GeometryT> step_geometries)
 {
-    util::json::Object route_leg = makeRouteLeg(std::move(leg), std::move(steps));
-    route_leg.values["annotation"] = std::move(annotation);
-    return route_leg;
+    // stuff the corresponding step geometry into each step in each leg
+    auto step_geom_iter = step_geometries.begin();
+    for (const auto idx : util::irange<std::size_t>(0UL, legs.size()))
+    {
+        // step_geometries stores geoms in blocks corresponding to the legs
+        std::advance(step_geom_iter, idx * legs[idx - 1]);
+        auto leg = std::move(legs[idx]);
+        std::for_each(leg.steps.begin(),
+                      leg.steps.end(),
+                      [&step_geom_iter](api::RouteStep &step) {
+                          step.geometry = *step_geom_iter;
+                      });
+    }
 }
 
-util::json::Array makeRouteLegs(std::vector<guidance::RouteLeg> legs,
+template <typename GeometryT>
+util::json::Array makeRouteLegs(std::vector<guidance::RouteLeg<GeometryT> legs,
                                 std::vector<util::json::Value> step_geometries,
                                 std::vector<util::json::Object> annotations)
 {
@@ -409,9 +442,21 @@ util::json::Array makeRouteLegs(std::vector<guidance::RouteLeg> legs,
     }
     return json_legs;
 }
+*/
 
-util::json::Object toJSON(const Route &route)
+util::json::Object makeWaypoint(const util::Coordinate location, std::string name)
 {
+    util::json::Object waypoint;
+    waypoint.values["location"] = detail::coordinateToLonLat(location);
+    waypoint.values["name"] = std::move(name);
+    return waypoint;
+}
+
+util::json::Object makeWaypoint(const util::Coordinate location, std::string name, const Hint &hint)
+{
+    auto waypoint = makeWaypoint(location, name);
+    waypoint.values["hint"] = hint.ToBase64();
+    return waypoint;
 }
 
 util::json::Object toJSON(const Waypoint &waypoint)
@@ -479,8 +524,15 @@ util::json::Object toJSON(const TableResult &result)
     return json_result;
 }
 
-util::json::Object toJSON(const RouteResult &result)
+template <typename GeometryT>
+util::json::Object toJSON(const RouteResult<GeometryT> &result)
 {
+    util::json::Object json_result;
+    json_result.values["waypoints"] = waypointsToJSON(result.waypoints);
+    json_result.values["routes"] = routesToJSON(result.routes);
+    json_result.values["code"] = "Ok";
+
+    return json_result;
 }
 
 

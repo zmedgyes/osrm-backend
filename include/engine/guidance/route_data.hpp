@@ -1,5 +1,5 @@
-#ifndef ROUTE_HPP
-#define ROUTE_HPP
+#ifndef ROUTE_DATA_HPP
+#define ROUTE_DATA_HPP
 
 namespace osrm
 {
@@ -8,7 +8,7 @@ namespace engine
 namespace guidance
 {
 
-struct Route
+struct RouteData
 {
     double distance;
     double duration;

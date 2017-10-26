@@ -8,7 +8,7 @@
 #include "engine/api/table_result.hpp"
 #include "engine/error.hpp"
 #include "engine/guidance/leg_geometry.hpp"
-#include "engine/guidance/route.hpp"
+#include "engine/guidance/route_data.hpp"
 #include "engine/guidance/route_leg.hpp"
 #include "engine/guidance/route_step.hpp"
 #include "engine/guidance/step_maneuver.hpp"
@@ -96,12 +96,15 @@ util::json::Object makeGeoJSONGeometry(ForwardIter begin, ForwardIter end)
 
 util::json::Object makeStepManeuver(const guidance::StepManeuver &maneuver);
 
-util::json::Object makeRouteStep(guidance::RouteStep step, util::json::Value geometry);
+template <typename GeometryT>
+util::json::Object makeRouteStep(api::RouteStep<GeometryT> &step);
 
-util::json::Object makeRoute(const guidance::Route &route,
+/*
+util::json::Object makeRoute(const guidance::RouteData &route,
                              util::json::Array legs,
                              boost::optional<util::json::Value> geometry,
                              const char *weight_name);
+                             */
 
 // Creates a Waypoint without Hint, see the Hint overload below
 util::json::Object makeWaypoint(const util::Coordinate location, std::string name);
@@ -110,18 +113,23 @@ util::json::Object makeWaypoint(const util::Coordinate location, std::string nam
 util::json::Object
 makeWaypoint(const util::Coordinate location, std::string name, const Hint &hint);
 
-util::json::Object makeRouteLeg(guidance::RouteLeg leg, util::json::Array steps);
+template <typename GeometryT>
+util::json::Object makeRouteLeg(guidance::RouteLeg<GeometryT> &leg);
 
-util::json::Array makeRouteLegs(std::vector<guidance::RouteLeg> legs,
+template <typename GeometryT>
+util::json::Array makeRouteLegs(std::vector<guidance::RouteLeg<GeometryT>> legs,
                                 std::vector<util::json::Value> step_geometries,
                                 std::vector<util::json::Object> annotations);
 
-util::json::Object toJSON(const Route &route);
+template <typename GeometryT>
+util::json::Object makeRoute(const ApiRoute<GeometryT> &route);
 util::json::Object toJSON(const Waypoint &waypoint);
 
 util::json::Object toJSON(const NearestResult &);
 util::json::Object toJSON(const TableResult &);
-util::json::Object toJSON(const RouteResult &result);
+
+template <typename GeometryT>
+util::json::Object toJSON(const RouteResult<GeometryT> &result);
 
 util::json::Object toJSON(const Error &);
 }

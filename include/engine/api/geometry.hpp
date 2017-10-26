@@ -16,8 +16,10 @@ struct PolylineGeometry
 };
 
 struct GeoJSONGeometry
-}
+{
     util::json::Object geometry;
+};
+}
 }
 }
 

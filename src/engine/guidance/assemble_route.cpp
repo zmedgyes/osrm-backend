@@ -9,22 +9,23 @@ namespace engine
 namespace guidance
 {
 
-Route assembleRoute(const std::vector<RouteLeg> &route_legs)
+template <typename GeometryT>
+RouteData assembleRoute(const std::vector<RouteLeg<GeometryT>> &route_legs)
 {
     auto distance = std::accumulate(
-        route_legs.begin(), route_legs.end(), 0., [](const double sum, const RouteLeg &leg) {
+        route_legs.begin(), route_legs.end(), 0., [](const double sum, const auto &leg) {
             return sum + leg.distance;
         });
     auto duration = std::accumulate(
-        route_legs.begin(), route_legs.end(), 0., [](const double sum, const RouteLeg &leg) {
+        route_legs.begin(), route_legs.end(), 0., [](const double sum, const auto &leg) {
             return sum + leg.duration;
         });
     auto weight = std::accumulate(
-        route_legs.begin(), route_legs.end(), 0., [](const double sum, const RouteLeg &leg) {
+        route_legs.begin(), route_legs.end(), 0., [](const double sum, const auto &leg) {
             return sum + leg.weight;
         });
 
-    return Route{distance, duration, weight};
+    return RouteData{distance, duration, weight};
 }
 
 } // namespace guidance

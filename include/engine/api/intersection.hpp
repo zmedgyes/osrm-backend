@@ -20,7 +20,7 @@ struct Intersection
     std::size_t out;
     std::vector<bool> entry;
     std::vector<std::string> classes;
-    std::vector<LaneTuple> lanes; // this might change?
+    std::vector<util::guidance::LaneTuple> lanes; // this might change?
 };
 }
 }

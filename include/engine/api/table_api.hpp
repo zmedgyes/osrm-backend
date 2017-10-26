@@ -67,35 +67,6 @@ class TableAPI final : public BaseAPI
     }
 
   protected:
-    virtual std::vector<Waypoint> MakeWaypoints(const std::vector<PhantomNode> &phantoms) const
-    {
-        std::vector<Waypoint> waypoints;
-        waypoints.reserve(phantoms.size());
-        BOOST_ASSERT(phantoms.size() == parameters.coordinates.size());
-
-        boost::range::transform(
-            phantoms, std::back_inserter(waypoints), [this](const PhantomNode &phantom) {
-                auto name = facade.GetNameForID(facade.GetNameIndex(phantom.forward_segment_id.id));
-                return Waypoint{0, name.data(), phantom.location};
-            });
-        return waypoints;
-    }
-
-    virtual std::vector<Waypoint> MakeWaypoints(const std::vector<PhantomNode> &phantoms,
-                                                const std::vector<std::size_t> &indices) const
-    {
-        std::vector<Waypoint> waypoints;
-        waypoints.reserve(indices.size());
-        boost::range::transform(
-            indices, std::back_inserter(waypoints), [this, phantoms](const std::size_t idx) {
-                BOOST_ASSERT(idx < phantoms.size());
-                auto name =
-                    facade.GetNameForID(facade.GetNameIndex(phantoms[idx].forward_segment_id.id));
-                return Waypoint{0, name.data(), phantoms[idx].location};
-            });
-        return waypoints;
-    }
-
     const TableParameters &parameters;
 };
 

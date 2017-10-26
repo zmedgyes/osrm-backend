@@ -14,7 +14,7 @@ namespace engine
 {
 namespace api
 {
-template <typename GeometryT> struct ApiRouteStep
+template <typename GeometryT> struct RouteStep
 {
     double duration; // duration in seconds
     double distance; // distance in meters

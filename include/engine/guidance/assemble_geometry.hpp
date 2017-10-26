@@ -31,7 +31,7 @@ namespace guidance
 //             |---| segment 1
 //                 |---| segment 2
 //                     |---| segment 3
-inline LegGeometry assembleGeometry(const datafacade::BaseDataFacade &facade,
+inline LegGeometry assembleLegGeometry(const datafacade::BaseDataFacade &facade,
                                     const std::vector<PathData> &leg_data,
                                     const PhantomNode &source_node,
                                     const PhantomNode &target_node,

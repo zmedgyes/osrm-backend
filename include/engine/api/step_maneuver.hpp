@@ -19,7 +19,7 @@ struct StepManeuver
     std::string type;
     std::string modifier;
     unsigned exit;
-}
+};
 }
 }
 }

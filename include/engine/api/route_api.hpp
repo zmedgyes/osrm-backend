@@ -4,6 +4,7 @@
 #include "engine/api/base_api.hpp"
 #include "engine/api/json_factory.hpp"
 #include "engine/api/route_parameters.hpp"
+#include "engine/api/route_result.hpp"
 
 #include "engine/datafacade/datafacade_base.hpp"
 
@@ -14,6 +15,7 @@
 #include "engine/guidance/assemble_steps.hpp"
 #include "engine/guidance/collapse_turns.hpp"
 #include "engine/guidance/lane_processing.hpp"
+#include "engine/polyline_compressor.hpp"
 #include "engine/guidance/post_processing.hpp"
 #include "engine/guidance/verbosity_reduction.hpp"
 
@@ -22,6 +24,7 @@
 #include "util/coordinate.hpp"
 #include "util/integer_range.hpp"
 #include "util/json_util.hpp"
+#include "util/typedefs.hpp"
 
 #include <iterator>
 #include <vector>
@@ -41,72 +44,60 @@ class RouteAPI : public BaseAPI
     {
     }
 
-    void MakeResponse(const InternalManyRoutesResult &raw_routes,
-                      util::json::Object &response) const
+    RouteResult MakeResponse(const InternalManyRoutesResult &raw_routes) const
     {
         BOOST_ASSERT(!raw_routes.routes.empty());
 
-        util::json::Array jsRoutes;
+        RouteResult route_result;
 
         for (const auto &route : raw_routes.routes)
         {
             if (!route.is_valid())
                 continue;
 
-            jsRoutes.values.push_back(MakeRoute(route.segment_end_coordinates,
-                                                route.unpacked_path_segments,
-                                                route.source_traversed_in_reverse,
-                                                route.target_traversed_in_reverse));
+            route_result.routes.push_back(MakeRoute(route.segment_end_coordinates,
+                                                    route.unpacked_path_segments,
+                                                    route.source_traversed_in_reverse,
+                                                    route.target_traversed_in_reverse));
         }
-
-        response.values["waypoints"] =
+        route_result.waypoints =
             BaseAPI::MakeWaypoints(raw_routes.routes[0].segment_end_coordinates);
-        response.values["routes"] = std::move(jsRoutes);
-        response.values["code"] = "Ok";
+        route_result.routes = std::move(routes);
     }
 
   protected:
-    template <typename ForwardIter>
-    util::json::Value MakeGeometry(ForwardIter begin, ForwardIter end) const
+    template <typename GetFn, typename AT>
+    auto GetAnnotations(const guidance::LegGeometry &leg, GetFn Get) const
     {
-        if (parameters.geometries == RouteParameters::GeometriesType::Polyline)
-        {
-            return json::makePolyline<100000>(begin, end);
-        }
-
-        if (parameters.geometries == RouteParameters::GeometriesType::Polyline6)
-        {
-            return json::makePolyline<1000000>(begin, end);
-        }
-
-        BOOST_ASSERT(parameters.geometries == RouteParameters::GeometriesType::GeoJSON);
-        return json::makeGeoJSONGeometry(begin, end);
-    }
-
-    template <typename GetFn>
-    util::json::Array GetAnnotations(const guidance::LegGeometry &leg, GetFn Get) const
-    {
-        util::json::Array annotations_store;
-        annotations_store.values.reserve(leg.annotations.size());
+        std::vector<AT> annotations_store;
+        annotations_store.reserve(leg.annotations.size());
         std::for_each(leg.annotations.begin(),
                       leg.annotations.end(),
                       [Get, &annotations_store](const auto &step) {
-                          annotations_store.values.push_back(Get(step));
+                          annotations_store.push_back(Get(step));
                       });
         return annotations_store;
     }
 
-    util::json::Object MakeRoute(const std::vector<PhantomNodes> &segment_end_coordinates,
-                                 const std::vector<std::vector<PathData>> &unpacked_path_segments,
-                                 const std::vector<bool> &source_traversed_in_reverse,
-                                 const std::vector<bool> &target_traversed_in_reverse) const
+    ApiRoute MakeRoute(const std::vector<PhantomNodes> &segment_end_coordinates,
+                       const std::vector<std::vector<PathData>> &unpacked_path_segments,
+                       const std::vector<bool> &source_traversed_in_reverse,
+                       const std::vector<bool> &target_traversed_in_reverse) const
     {
-        std::vector<guidance::RouteLeg> legs;
+        // Assemble RouteLegs, populate with data
+        if (parameters.geometries == RouteParameters::GeometriesType::GeoJSON)
+        {
+            std::vector<api::RouteLeg<util::json::Object>> legs;
+        } else
+        {
+            std::vector<api::RouteLeg<std::string>> legs;
+        }
         std::vector<guidance::LegGeometry> leg_geometries;
         auto number_of_legs = segment_end_coordinates.size();
         legs.reserve(number_of_legs);
         leg_geometries.reserve(number_of_legs);
 
+        // populate data for each leg of the route
         for (auto idx : util::irange<std::size_t>(0UL, number_of_legs))
         {
             const auto &phantoms = segment_end_coordinates[idx];
@@ -115,7 +106,8 @@ class RouteAPI : public BaseAPI
             const bool reversed_source = source_traversed_in_reverse[idx];
             const bool reversed_target = target_traversed_in_reverse[idx];
 
-            auto leg_geometry = guidance::assembleGeometry(BaseAPI::facade,
+            // assemble geometry and metadata of leg, including annotation data
+            auto leg_geometry = guidance::assembleLegGeometry(BaseAPI::facade,
                                                            path_data,
                                                            phantoms.source_phantom,
                                                            phantoms.target_phantom,
@@ -141,12 +133,12 @@ class RouteAPI : public BaseAPI
 
                 /* Perform step-based post-processing.
                  *
-                 * Using post-processing on basis of route-steps for a single leg at a time
-                 * comes at the cost that we cannot count the correct exit for roundabouts.
+                 * By running post-processing on the route steps of a single leg at a time, we
+                 * cannot count the correct exit for roundabouts.
                  * We can only emit the exit nr/intersections up to/starting at a part of the leg.
                  * If a roundabout is not terminated in a leg, we will end up with a
-                 *enter-roundabout
-                 * and exit-roundabout-nr where the exit nr is out of sync with the previous enter.
+                 * enter-roundabout and exit-roundabout-nr where the exit nr is out of sync with the
+                 *previous enter.
                  *
                  *         | S |
                  *         *   *
@@ -188,8 +180,10 @@ class RouteAPI : public BaseAPI
             legs.push_back(std::move(leg));
         }
 
-        auto route = guidance::assembleRoute(legs);
-        boost::optional<util::json::Value> json_overview;
+        // populate duration, distance and weight fields of route
+        auto route_data = guidance::assembleRoute(legs);
+
+        // Handle creating overview geometry
         if (parameters.overview != RouteParameters::OverviewType::False)
         {
             const auto use_simplification =
@@ -198,43 +192,63 @@ class RouteAPI : public BaseAPI
                          parameters.overview == RouteParameters::OverviewType::Full);
 
             auto overview = guidance::assembleOverview(leg_geometries, use_simplification);
-            json_overview = MakeGeometry(overview.begin(), overview.end());
+            if (parameters.geometries == RouteParameters::GeometriesType::Polyline)
+            {
+                auto overview = makePolyline<100000>(overview.begin(), overview.end());
+            }
+            if (parameters.geometries == RouteParameters::GeometriesType::Polyline6)
+            {
+                auto overview = makePolyline<1000000>(overview.begin(), overview.end());
+            }
+            BOOST_ASSERT(parameters.geometries == RouteParameters::GeometriesType::GeoJSON);
+            auto json_overview = json::makeGeoJSONGeometry(overview.begin(), overview.end());
+        }
+        else
+        {
+            auto overview = nullptr;
         }
 
-        std::vector<util::json::Value> step_geometries;
+        // Create geometry for each route step
+        if (parameters.geometries == RouteParameters::GeometriesType::GeoJSON)
+        {
+                std::vector<util::json::Object> step_geometries;
+        } else
+        {
+                std::vector<std::string> step_geometries;
+        }
         for (const auto idx : util::irange<std::size_t>(0UL, legs.size()))
         {
             auto &leg_geometry = leg_geometries[idx];
 
-            step_geometries.reserve(step_geometries.size() + legs[idx].steps.size());
-
-            std::transform(
-                legs[idx].steps.begin(),
-                legs[idx].steps.end(),
-                std::back_inserter(step_geometries),
-                [this, &leg_geometry](const guidance::RouteStep &step) {
-                    if (parameters.geometries == RouteParameters::GeometriesType::Polyline)
-                    {
-                        return static_cast<util::json::Value>(json::makePolyline<100000>(
-                            leg_geometry.locations.begin() + step.geometry_begin,
-                            leg_geometry.locations.begin() + step.geometry_end));
-                    }
-
-                    if (parameters.geometries == RouteParameters::GeometriesType::Polyline6)
-                    {
-                        return static_cast<util::json::Value>(json::makePolyline<1000000>(
-                            leg_geometry.locations.begin() + step.geometry_begin,
-                            leg_geometry.locations.begin() + step.geometry_end));
-                    }
-
-                    BOOST_ASSERT(parameters.geometries == RouteParameters::GeometriesType::GeoJSON);
-                    return static_cast<util::json::Value>(json::makeGeoJSONGeometry(
-                        leg_geometry.locations.begin() + step.geometry_begin,
-                        leg_geometry.locations.begin() + step.geometry_end));
-                });
+            auto handlePolyline = [this, &leg_geometry](const guidance::RouteStep &step,
+                                                        std::size_t precision) {
+                return makePolyline<precision>(leg_geometry.locations.begin() + step.geometry_begin,
+                                               leg_geometry.locations.begin() + step.geometry_end);
+            };
+            auto handleGeoJSON = [this, &leg_geometry](const guidance::RouteStep &step) {
+                return json::makeGeoJSONGeometry(
+                    leg_geometry.locations.begin() + step.geometry_begin,
+                    leg_geometry.locations.begin() + step.geometry_end);
+            };
+            if (parameters.geometries == RouteParameters::GeometriesType::Polyline ||
+                parameters.geometries == RouteParameters::GeometriesType::Polyline6)
+            {
+                std::size_t Precision =
+                    parameters.geometries == RouteParameters::GeometriesType::Polyline ? 10000
+                                                                                       : 1000000;
+                std::transform(legs[idx].steps.begin(),
+                               legs[idx].steps.end(),
+                               std::back_inserter(step_geometries),
+                               handlePolyline(legs[idx], Precision));
+            }
+            if (parameters.geometries == RouteParameters::GeometriesType::GeoJSON)
+            {
+                std::transform(legs[idx].steps.begin(),
+                               legs[idx].steps.end(),
+                               std::back_inserter(step_geometries),
+                               handleGeoJSON(legs[idx]));
+            }
         }
-
-        std::vector<util::json::Object> annotations;
 
         // To maintain support for uses of the old default constructors, we check
         // if annotations property was set manually after default construction
@@ -250,67 +264,66 @@ class RouteAPI : public BaseAPI
             for (const auto idx : util::irange<std::size_t>(0UL, leg_geometries.size()))
             {
                 auto &leg_geometry = leg_geometries[idx];
-                util::json::Object annotation;
+                ApiAnnotation annotation;
 
                 // AnnotationsType uses bit flags, & operator checks if a property is set
                 if (parameters.annotations_type & RouteParameters::AnnotationsType::Speed)
                 {
-                    annotation.values["speed"] = GetAnnotations(
+                    annotation.speed = GetAnnotations<double>(
                         leg_geometry, [](const guidance::LegGeometry::Annotation &anno) {
-                            auto val = std::round(anno.distance / anno.duration * 10.) / 10.;
-                            return util::json::clamp_float(val);
+                            return val = std::round(anno.distance / anno.duration * 10.) / 10.;
                         });
                 }
 
                 if (requested_annotations & RouteParameters::AnnotationsType::Duration)
                 {
-                    annotation.values["duration"] = GetAnnotations(
+                    annotation.duration = GetAnnotations<double>(
                         leg_geometry, [](const guidance::LegGeometry::Annotation &anno) {
                             return anno.duration;
                         });
                 }
                 if (requested_annotations & RouteParameters::AnnotationsType::Distance)
                 {
-                    annotation.values["distance"] = GetAnnotations(
+                    annotation.distance = GetAnnotations<double>(
                         leg_geometry, [](const guidance::LegGeometry::Annotation &anno) {
                             return anno.distance;
                         });
                 }
                 if (requested_annotations & RouteParameters::AnnotationsType::Weight)
                 {
-                    annotation.values["weight"] = GetAnnotations(
+                    annotation.weight = GetAnnotations<double>(
                         leg_geometry,
                         [](const guidance::LegGeometry::Annotation &anno) { return anno.weight; });
                 }
                 if (requested_annotations & RouteParameters::AnnotationsType::Datasources)
                 {
-                    annotation.values["datasources"] = GetAnnotations(
+                    annotation.datasources = GetAnnotations<DatasourceID>(
                         leg_geometry, [](const guidance::LegGeometry::Annotation &anno) {
                             return anno.datasource;
                         });
                 }
                 if (requested_annotations & RouteParameters::AnnotationsType::Nodes)
                 {
-                    util::json::Array nodes;
-                    nodes.values.reserve(leg_geometry.osm_node_ids.size());
+                    std::vector<std::uint64_t> nodes;
+                    nodes.reserve(leg_geometry.osm_node_ids.size());
                     std::for_each(leg_geometry.osm_node_ids.begin(),
                                   leg_geometry.osm_node_ids.end(),
                                   [this, &nodes](const OSMNodeID &node_id) {
-                                      nodes.values.push_back(static_cast<std::uint64_t>(node_id));
+                                      nodes.push_back(static_cast<std::uint64_t>(node_id));
                                   });
-                    annotation.values["nodes"] = std::move(nodes);
+                    annotation.nodes = std::move(nodes);
                 }
 
-                annotations.push_back(std::move(annotation));
+                legs[idx].annotations.push_back(std::move(annotation));
             }
         }
 
-        auto result = json::makeRoute(route,
-                                      json::makeRouteLegs(std::move(legs),
-                                                          std::move(step_geometries),
-                                                          std::move(annotations)),
-                                      std::move(json_overview),
-                                      facade.GetWeightName());
+        auto result = ApiRoute(route_data.distance,
+                               route_data.duration,
+                               route_data.weight,
+                               facade.GetWeightName(),
+                               overview,
+                               std::move(legs));
 
         return result;
     }

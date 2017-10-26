@@ -3,19 +3,22 @@
 
 #include <vector>
 
+#include "util/typedefs.hpp"
+
 namespace osrm
 {
 namespace engine
 {
 namespace api
 {
-struct Annotation
+struct ApiAnnotation
 {
     std::vector<double> distance;
     std::vector<double> duration;
-    std::vector<std::uint8_t> datasources;
+    std::vector<DatasourceID> datasources;
     std::vector<double> nodes;
     std::vector<double> weight;
+    std::vector<double> speed;
 };
 }
 }

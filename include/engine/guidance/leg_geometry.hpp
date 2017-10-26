@@ -5,6 +5,8 @@
 #include "util/integer_range.hpp"
 #include "util/typedefs.hpp"
 
+#include "engine/guidance/annotation.hpp"
+
 #include <boost/assert.hpp>
 
 #include <cstddef>
@@ -34,18 +36,6 @@ struct LegGeometry
     // original OSM node IDs for each coordinate
     std::vector<OSMNodeID> osm_node_ids;
 
-    // Per-coordinate metadata
-    struct Annotation
-    {
-        double distance; // distance in meters
-
-        // Total duration of a segment, in seconds, NOT including
-        // the turn penalty if the segment preceeds a turn
-        double duration;
-        double weight; // weight value, NOT including the turn weight
-
-        DatasourceID datasource;
-    };
     std::vector<Annotation> annotations;
 
     std::size_t FrontIndex(std::size_t segment_index) const
