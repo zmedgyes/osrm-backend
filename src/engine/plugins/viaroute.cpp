@@ -26,6 +26,8 @@ ViaRoutePlugin::ViaRoutePlugin(int max_locations_viaroute, int max_alternatives)
 {
 }
 
+// TODO wrap cpp return in Status return HandleRequest
+// TODO return route result object version of HandleRequest
 Status ViaRoutePlugin::HandleRequest(const RoutingAlgorithmsInterface &algorithms,
                                      const api::RouteParameters &route_parameters,
                                      util::json::Object &json_result) const
@@ -34,6 +36,7 @@ Status ViaRoutePlugin::HandleRequest(const RoutingAlgorithmsInterface &algorithm
 
     if (!algorithms.HasShortestPathSearch() && route_parameters.coordinates.size() > 2)
     {
+        // TODO return all errors as include/engine/error.hpp types
         return Error("NotImplemented",
                      "Shortest path search is not implemented for the chosen search algorithm. "
                      "Only two coordinates supported.",
@@ -132,6 +135,7 @@ Status ViaRoutePlugin::HandleRequest(const RoutingAlgorithmsInterface &algorithm
 
     if (routes.routes[0].is_valid())
     {
+        // TODO have MakeReponse return cpp route result object
         route_api.MakeResponse(routes, json_result);
     }
     else
@@ -153,6 +157,7 @@ Status ViaRoutePlugin::HandleRequest(const RoutingAlgorithmsInterface &algorithm
         }
     }
 
+    // TODO return route result object
     return Status::Ok;
 }
 }
