@@ -14,6 +14,16 @@ namespace extractor
 namespace guidance
 {
 
+bool IntersectionViewData::CompareByInitBearing(const IntersectionViewData &other) const
+{
+    return initial_bearing > other.initial_bearing;
+}
+
+bool ConnectedRoad::CompareByInitBearing(const ConnectedRoad &other) const
+{
+    return initial_bearing > other.initial_bearing;
+}
+
 bool IntersectionViewData::CompareByAngle(const IntersectionViewData &other) const
 {
     return angle < other.angle;

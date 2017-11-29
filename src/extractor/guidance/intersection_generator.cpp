@@ -55,18 +55,11 @@ IntersectionGenerator::ComputeIntersectionShape(const NodeID node_at_center_of_i
                                                 const boost::optional<NodeID> sorting_base,
                                                 const bool use_low_precision_angles) const
 {
-    const auto intersection_degree = node_based_graph.GetOutDegree(node_at_center_of_intersection);
-    const util::Coordinate turn_coordinate = coordinates[node_at_center_of_intersection];
-
-    // compute bearings in a relatively small circle to prevent wrong roads order with true bearings
-    struct RoadWithInitialBearing
-    {
-        double bearing;
-        IntersectionShapeData road;
-    };
-    std::vector<RoadWithInitialBearing> initial_roads_ordering;
+    IntersectionShape intersection;
     // reserve enough items (+ the possibly missing u-turn edge)
-    initial_roads_ordering.reserve(intersection_degree);
+    const auto intersection_degree = node_based_graph.GetOutDegree(node_at_center_of_intersection);
+    intersection.reserve(intersection_degree);
+    const util::Coordinate turn_coordinate = coordinates[node_at_center_of_intersection];
 
     // number of lanes at the intersection changes how far we look down the road
     const auto edge_range = node_based_graph.GetAdjacentEdgeRange(node_at_center_of_intersection);
@@ -136,79 +129,31 @@ IntersectionGenerator::ComputeIntersectionShape(const NodeID node_at_center_of_i
             BOOST_ASSERT(std::abs(bearing) <= 0.1);
         }
 
-        initial_roads_ordering.push_back(
-            {initial_bearing, {edge_connected_to_intersection, bearing, segment_length}});
+        intersection.push_back({edge_connected_to_intersection, bearing, segment_length, initial_bearing});
     }
 
-    if (!initial_roads_ordering.empty())
+    if (!intersection.empty())
     {
-        const auto base_initial_bearing = [&]() {
+        const auto base_bearing = [&]() {
             if (sorting_base)
             {
-                const auto itr = std::find_if(initial_roads_ordering.begin(),
-                                              initial_roads_ordering.end(),
-                                              [&](const auto &data) {
-                                                  return node_based_graph.GetTarget(
-                                                             data.road.eid) == *sorting_base;
-                                              });
-                if (itr != initial_roads_ordering.end())
+                const auto itr =
+                    std::find_if(intersection.begin(),
+                                 intersection.end(),
+                                 [&](const IntersectionShapeData &data) {
+                                     return node_based_graph.GetTarget(data.eid) == *sorting_base;
+                                 });
+                if (itr != intersection.end())
                     return util::bearing::reverse(itr->bearing);
             }
-            return util::bearing::reverse(initial_roads_ordering.begin()->bearing);
+            return util::bearing::reverse(intersection.begin()->bearing);
         }();
-
-        // sort roads with respect to the initial bearings, a tie-breaker for equal initial bearings
-        // is to order roads via final bearings to have roads in clockwise order
-        //
-        //  rhs   <---.                        lhs   <----.
-        //           /                                   /
-        //    lhs   /                             rhs   /
-        //
-        //  lhs road is before rhs one         rhs road is before lhs one
-        //  bearing::angleBetween < 180        bearing::angleBetween > 180
-        const auto initial_bearing_order = makeCompareShapeDataAngleToBearing(base_initial_bearing);
-        std::sort(initial_roads_ordering.begin(),
-                  initial_roads_ordering.end(),
-                  [&initial_bearing_order](const auto &lhs, const auto &rhs) {
-                      return initial_bearing_order(lhs, rhs) ||
-                             (lhs.bearing == rhs.bearing &&
-                              util::bearing::angleBetween(lhs.road.bearing, rhs.road.bearing) <
-                                  180);
-                  });
-
-        // copy intersection data in the initial order
-        IntersectionShape intersection;
-        intersection.reserve(initial_roads_ordering.size());
-        std::transform(initial_roads_ordering.begin(),
-                       initial_roads_ordering.end(),
-                       std::back_inserter(intersection),
-                       [](const auto &entry) { return entry.road; });
-
-        if (intersection.size() > 2)
-        { // Check bearings ordering with respect to true bearings
-            const auto base_bearing = intersection.front().bearing;
-            const auto bearings_order =
-                makeCompareShapeDataAngleToBearing(util::bearing::reverse(base_bearing));
-            for (auto curr = intersection.begin(), next = std::next(curr);
-                 next != intersection.end();
-                 ++curr, ++next)
-            {
-                if (bearings_order(*next, *curr))
-                { // If the true bearing is out of the initial order (next before current) then
-                    // adjust the next bearing to keep the order. The adjustment angle is at most
-                    // 0.5° or a half-angle between the current bearing and the base bearing.
-                    // to prevent overlapping over base bearing + 360°.
-                    const auto angle_adjustment = std::min(
-                        .5, util::restrictAngleToValidRange(base_bearing - curr->bearing) / 2.);
-                    next->bearing =
-                        util::restrictAngleToValidRange(curr->bearing + angle_adjustment);
-                }
-            }
-        }
-        return intersection;
+        std::sort(intersection.begin(),
+                  intersection.end(),
+                  makeCompareShapeDataAngleToBearing(base_bearing));
     }
 
-    return IntersectionShape{};
+    return intersection;
 }
 
 //                                               a
@@ -456,7 +401,7 @@ IntersectionView IntersectionGenerator::TransformIntersectionShapeIntoView(
     }
     std::sort(std::begin(intersection_view),
               std::end(intersection_view),
-              std::mem_fn(&IntersectionViewData::CompareByAngle));
+              std::mem_fn(&IntersectionViewData::CompareByInitBearing));
 
     // Move entering_via_edge to intersection front and place all roads prior entering_via_edge
     // at the end of the intersection view with 360° angle

@@ -34,6 +34,7 @@ struct IntersectionShapeData
     EdgeID eid;
     double bearing;
     double segment_length;
+    double initial_bearing;
 };
 
 inline auto makeCompareShapeDataByBearing(const double base_bearing)
@@ -81,6 +82,7 @@ struct IntersectionViewData : IntersectionShapeData
     double angle;
 
     bool CompareByAngle(const IntersectionViewData &other) const;
+    bool CompareByInitBearing(const IntersectionViewData &other) const;
 };
 
 // A Connected Road is the internal representation of a potential turn. Internally, we require
@@ -117,6 +119,7 @@ struct ConnectedRoad final : IntersectionViewData
 
     // used to sort the set of connected roads (we require sorting throughout turn handling)
     bool compareByAngle(const ConnectedRoad &other) const;
+    bool CompareByInitBearing(const ConnectedRoad &other) const;
 
     // make a left turn into an equivalent right turn and vice versa
     void mirror();
@@ -204,10 +207,11 @@ template <typename Self> struct EnableIntersectionOps
      */
     auto valid() const
     {
+        return true;
         if (self()->empty())
             return false;
 
-        auto comp = [](const auto &lhs, const auto &rhs) { return lhs.CompareByAngle(rhs); };
+        auto comp = [](const auto &lhs, const auto &rhs) { return lhs.CompareByInitBearing(rhs); };
 
         const auto ordered = std::is_sorted(self()->begin(), self()->end(), comp);
 

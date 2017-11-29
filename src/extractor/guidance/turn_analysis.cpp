@@ -225,6 +225,7 @@ Intersection TurnAnalysis::setTurnTypes(const NodeID node_prior_to_intersection,
     return intersection;
 }
 
+// Unused?
 const IntersectionGenerator &TurnAnalysis::GetIntersectionGenerator() const
 {
     return intersection_generator;
