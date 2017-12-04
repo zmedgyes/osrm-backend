@@ -144,9 +144,9 @@ IntersectionGenerator::ComputeIntersectionShape(const NodeID node_at_center_of_i
                                      return node_based_graph.GetTarget(data.eid) == *sorting_base;
                                  });
                 if (itr != intersection.end())
-                    return util::bearing::reverse(itr->bearing);
+                    return util::bearing::reverse(itr->initial_bearing);
             }
-            return util::bearing::reverse(intersection.begin()->bearing);
+            return util::bearing::reverse(intersection.begin()->initial_bearing);
         }();
         std::sort(intersection.begin(),
                   intersection.end(),
@@ -399,16 +399,22 @@ IntersectionView IntersectionGenerator::TransformIntersectionShapeIntoView(
         }();
         uturn_edge_at_intersection_view_itr->entry_allowed = allow_uturn_at_dead_end;
     }
-    std::sort(std::begin(intersection_view),
-              std::end(intersection_view),
-              std::mem_fn(&IntersectionViewData::CompareByInitBearing));
-
-    // Move entering_via_edge to intersection front and place all roads prior entering_via_edge
-    // at the end of the intersection view with 360° angle
+    // Reorder intersection_view based on smallest initial_bearings from uturn road
     auto entering_via_it = std::find_if(intersection_view.begin(),
                                         intersection_view.end(),
                                         [&uturn](auto &road) { return road.eid == uturn.first; });
-
+    BOOST_ASSERT(entering_via_it != intersection_view.end());
+    const auto approach_bear = entering_via_it->initial_bearing;
+    std::sort(std::begin(intersection_view),
+              std::end(intersection_view),
+              [&](const auto &lhs, const auto &rhs) {
+                auto left = osrm::util::restrictAngleToValidRange(approach_bear - lhs.initial_bearing);
+                auto right = osrm::util::restrictAngleToValidRange(approach_bear - rhs.initial_bearing);
+                return  left < right;
+              });
+    /*
+    // Move entering_via_edge to intersection front and place all roads prior entering_via_edge
+    // at the end of the intersection view with 360° angle
     OSRM_ASSERT(entering_via_it != intersection_view.end() && entering_via_it->angle >= 0. &&
                     entering_via_it->angle < std::numeric_limits<double>::epsilon(),
                 coordinates[node_at_intersection]);
@@ -419,6 +425,7 @@ IntersectionView IntersectionGenerator::TransformIntersectionShapeIntoView(
             intersection_view.begin(), entering_via_it, [](auto &road) { road.angle = 360.; });
         std::rotate(intersection_view.begin(), entering_via_it, intersection_view.end());
     }
+    */
 
     return intersection_view;
 }
