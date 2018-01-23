@@ -512,7 +512,6 @@ updateConditionalTurns(std::vector<TurnPenalty> &turn_weight_penalties,
     {
         if (IsRestrictionValid(time_zone_handler, penalty))
         {
-            std::cout << "Disabling: " << penalty.turn_offset << std::endl;
             turn_weight_penalties[penalty.turn_offset] = INVALID_TURN_PENALTY;
             updated_turns.push_back(penalty.turn_offset);
         }
