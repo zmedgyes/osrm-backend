@@ -17,9 +17,9 @@ constexpr float kMaxInternalLength = 32.0f;
 
 struct EdgeInfo
 {
-	EdgeID edge;
+    EdgeID edge;
 
-	NodeID node;
+    NodeID node;
 
     util::StringView name;
 
@@ -47,14 +47,15 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
         graph, factory.GetCompressedEdges(), coordinates);
 
     auto const get_edge_length = [&](NodeID from_node, EdgeID edge_id, NodeID to_node) {
-		auto const geom = coordExtractor.GetCoordinatesAlongRoad(from_node, edge_id, false, to_node);
-		double length = 0.0;
-		for (size_t i = 1; i < geom.size(); ++i)
-		{
-			length += util::coordinate_calculation::haversineDistance(geom[i - 1], geom[i]);
-		}
-		return length;
-	};
+        auto const geom =
+            coordExtractor.GetCoordinatesAlongRoad(from_node, edge_id, false, to_node);
+        double length = 0.0;
+        for (size_t i = 1; i < geom.size(); ++i)
+        {
+            length += util::coordinate_calculation::haversineDistance(geom[i - 1], geom[i]);
+        }
+        return length;
+    };
 
     // Returns an angle between edges from from_edge_id to to_edge_id
     auto const get_angle = [&](NodeID from_node, EdgeID from_edge_id, NodeID to_edge_id) {
@@ -69,7 +70,6 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
             node_from, coordinates[intersection_node], node_to);
     };
 
-
     auto const get_edge_info = [&](EdgeID edge_id, NodeID node, auto const &edge_data) -> EdgeInfo {
         /// @todo Make string normalization/lowercase/trim for comparison ...
 
@@ -80,13 +80,15 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
         return {edge_id,
                 node,
                 name,
-				edge_data.reversed,
-				edge_data.reversed ? 1 : 0,
+                edge_data.reversed,
+                edge_data.reversed ? 1 : 0,
                 annotation[edge_data.annotation_data].classes,
-				edge_data.flags};
+                edge_data.flags};
     };
 
-    auto is_bidirectional = [](auto flags) { return flags.is_split || (!flags.is_split && flags.forward && flags.backward); };
+    auto is_bidirectional = [](auto flags) {
+        return flags.is_split || (!flags.is_split && flags.forward && flags.backward);
+    };
 
     auto isSegregated = [&](NodeID node1,
                             std::vector<EdgeInfo> v1,
@@ -95,22 +97,27 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
                             double edge_length) {
         // Internal intersection edges must be short and cannot be a roundabout
         // TODO adjust length as needed with lamda
-        if (edge_length > kMaxInternalLength || current.flags.roundabout) {
+        if (edge_length > kMaxInternalLength || current.flags.roundabout)
+        {
             return false;
         }
 
         bool oneway_inbound = false;
-        for (auto const &edge_from : v1) {
+        for (auto const &edge_from : v1)
+        {
             // Get the inbound edge and edge data
             auto edge_inbound = graph.FindEdge(edge_from.node, node1);
             auto const &edge_inbound_data = graph.GetEdgeData(edge_inbound);
-            if (!edge_inbound_data.reversed) {
+            if (!edge_inbound_data.reversed)
+            {
                 // Skip any inbound edges not oneway (i.e. skip bidirectional)
                 // and link edge
                 // and not a road
-                if (is_bidirectional(edge_inbound_data.flags)
-                        || edge_inbound_data.flags.road_classification.IsLinkClass()
-                        || (edge_inbound_data.flags.road_classification.GetClass() > RoadPriorityClass::SIDE_RESIDENTIAL)) {
+                if (is_bidirectional(edge_inbound_data.flags) ||
+                    edge_inbound_data.flags.road_classification.IsLinkClass() ||
+                    (edge_inbound_data.flags.road_classification.GetClass() >
+                     RoadPriorityClass::SIDE_RESIDENTIAL))
+                {
                     continue;
                 }
 
@@ -118,7 +125,8 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
                 auto const turn_degree = get_angle(edge_from.node, edge_inbound, current.edge);
                 // Skip if the inbound edge is not somewhat perpendicular to the current edge
                 // TODO add turn degree lamda
-                if (turn_degree > 150 && turn_degree < 210) {
+                if (turn_degree > 150 && turn_degree < 210)
+                {
                     continue;
                 }
 
@@ -129,7 +137,8 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
         }
 
         // Return false if no valid oneway inbound edge
-        if (!oneway_inbound) {
+        if (!oneway_inbound)
+        {
             return false;
         }
 
@@ -141,9 +150,11 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
                 // Skip any outbound edges not oneway (i.e. skip bidirectional)
                 // and link edge
                 // and not a road
-                if (is_bidirectional(edge_to.flags)
-                        || edge_to.flags.road_classification.IsLinkClass()
-                        || (edge_to.flags.road_classification.GetClass() > RoadPriorityClass::SIDE_RESIDENTIAL)) {
+                if (is_bidirectional(edge_to.flags) ||
+                    edge_to.flags.road_classification.IsLinkClass() ||
+                    (edge_to.flags.road_classification.GetClass() >
+                     RoadPriorityClass::SIDE_RESIDENTIAL))
+                {
                     continue;
                 }
 
@@ -151,7 +162,8 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
                 auto const turn_degree = get_angle(node1, current.edge, edge_to.edge);
                 // Skip if the outbound edge is not somewhat perpendicular to the current edge
                 // TODO add turn degree lamda
-                if (turn_degree > 150 && turn_degree < 210) {
+                if (turn_degree > 150 && turn_degree < 210)
+                {
                     continue;
                 }
 
@@ -162,7 +174,8 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
         }
 
         // Return false if no valid oneway outbound edge
-        if (!oneway_outbound) {
+        if (!oneway_outbound)
+        {
             return false;
         }
 
@@ -233,7 +246,8 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
             auto const targetEdges = graph.GetAdjacentEdgeRange(target_id);
 
             double const length = get_edge_length(source_id, edge_id, target_id);
-            if (isSegregatedFn(edge_id, edgeData, source_edges, source_id, targetEdges, target_id, length))
+            if (isSegregatedFn(
+                    edge_id, edgeData, source_edges, source_id, targetEdges, target_id, length))
                 segregated_edges.insert(edge_id);
         }
     }
