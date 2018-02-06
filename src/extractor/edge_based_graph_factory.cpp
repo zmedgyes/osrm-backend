@@ -519,9 +519,10 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
                                     &scripting_environment,
                                     weight_multiplier,
                                     &conditional_restriction_map](
-            // what nodes will be used? In most cases this will be the id stored in the edge_data.
-            // In case of duplicated nodes (e.g. due to via-way restrictions), one/both of these
-            // might refer to a newly added edge based node
+            // what nodes will be used? In most cases this will be the id
+            // stored in the edge_data. In case of duplicated nodes (e.g.
+            // due to via-way restrictions), one/both of these might
+            // refer to a newly added edge based node
             const auto edge_based_node_from,
             const auto edge_based_node_to,
             // the situation of the turn
@@ -807,14 +808,14 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
                                     << "Turn is a u turn but not turning to the first connected "
                                        "edge of the intersection. Node ID: "
                                     << intersection_node << ", OSM link: "
-                                    << m_coordinates[intersection_node].toOSMLink();
+                                    << toOSMLink(m_coordinates[intersection_node]);
                             }
                             else if (turn == intersection_view.begin() && !is_uturn)
                             {
                                 util::Log(logWARNING)
                                     << "Turn is a u turn but not classified as a u turn. Node ID: "
                                     << intersection_node << ", OSM link: "
-                                    << m_coordinates[intersection_node].toOSMLink();
+                                    << toOSMLink(m_coordinates[intersection_node]);
                             }
 
                             // In case a way restriction starts at a given location, add a turn onto

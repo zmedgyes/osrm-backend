@@ -6,6 +6,7 @@
 #include "util/coordinate_calculation.hpp"
 #include "util/guidance/name_announcements.hpp"
 #include "util/log.hpp"
+#include "util/to_osm_link.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -177,7 +178,7 @@ bool RoundaboutHandler::qualifiesAsRoundaboutIntersection(
                 // but is at least not random.
                 if (src_coordinate == next_coordinate)
                 {
-                    util::Log(logDEBUG) << "Zero length segment at " << next_coordinate
+                    util::Log(logDEBUG) << "Zero length segment at " << toOSMLink(next_coordinate)
                                         << " could cause invalid roundabout exit bearings";
                     BOOST_ASSERT(std::abs(result.back()) <= 0.1);
                 }
