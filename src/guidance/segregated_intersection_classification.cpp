@@ -7,6 +7,10 @@
 
 namespace osrm
 {
+namespace util
+{
+class NameTable;
+}
 namespace extractor
 {
 namespace guidance
@@ -25,6 +29,9 @@ struct EdgeInfo
 
     bool reversed;
 
+    // 0 - outgoing (forward), 1 - incoming (reverse), 2 - both outgoing and incoming
+    int direction;
+
     extractor::ClassData road_class;
 
     NodeBasedEdgeClassification flags;
@@ -35,7 +42,8 @@ struct EdgeInfo
     };
 };
 
-std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFactory &factory,
+std::unordered_set<EdgeID>
+osrm::extractor::guidance::findSegregatedNodes(const NodeBasedGraphFactory &factory,
                                                const util::NameTable &names)
 {
 
@@ -206,6 +214,22 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
         std::sort(info.begin(), info.end(), [](EdgeInfo const &e1, EdgeInfo const &e2) {
             return e1.node < e2.node;
         });
+
+        // Merge equal infos with correct direction.
+        auto curr = info.begin();
+        auto next = curr;
+        while (++next != info.end())
+        {
+            if (curr->node == next->node)
+            {
+                BOOST_ASSERT(curr->name == next->name);
+                BOOST_ASSERT(curr->road_class == next->road_class);
+                BOOST_ASSERT(curr->direction != next->direction);
+                curr->direction = 2;
+            }
+            else
+                curr = next;
+        }
 
         info.erase(
             std::unique(info.begin(),
