@@ -5,9 +5,10 @@
 
 #include "contractor/query_edge.hpp"
 #include "extractor/class_data.hpp"
-#include "extractor/guidance/turn_instruction.hpp"
-#include "extractor/guidance/turn_lane_types.hpp"
 #include "extractor/travel_mode.hpp"
+#include "extractor/turn_lane_types.hpp"
+#include "guidance/turn_bearing.hpp"
+#include "guidance/turn_instruction.hpp"
 
 #include "engine/algorithm.hpp"
 #include "engine/datafacade/algorithm_datafacade.hpp"
@@ -15,7 +16,6 @@
 
 #include "util/guidance/bearing_class.hpp"
 #include "util/guidance/entry_class.hpp"
-#include "util/guidance/turn_bearing.hpp"
 #include "util/typedefs.hpp"
 
 namespace osrm
@@ -90,10 +90,10 @@ class MockBaseDataFacade : public engine::datafacade::BaseDataFacade
 
     StringView GetDatasourceName(const DatasourceID) const override final { return {}; }
 
-    extractor::guidance::TurnInstruction
+    osrm::guidance::TurnInstruction
     GetTurnInstructionForEdgeID(const EdgeID /* id */) const override
     {
-        return extractor::guidance::TurnInstruction::NO_TURN();
+        return osrm::guidance::TurnInstruction::NO_TURN();
     }
     std::vector<RTreeLeaf> GetEdgesInBox(const util::Coordinate /* south_west */,
                                          const util::Coordinate /*north_east */) const override
@@ -226,13 +226,13 @@ class MockBaseDataFacade : public engine::datafacade::BaseDataFacade
     bool IsLeftHandDriving(const NodeID /*id*/) const override { return false; }
     bool IsSegregated(const NodeID /*id*/) const override { return false; }
 
-    util::guidance::TurnBearing PreTurnBearing(const EdgeID /*eid*/) const override final
+    guidance::TurnBearing PreTurnBearing(const EdgeID /*eid*/) const override final
     {
-        return util::guidance::TurnBearing{0.0};
+        return guidance::TurnBearing{0.0};
     }
-    util::guidance::TurnBearing PostTurnBearing(const EdgeID /*eid*/) const override final
+    guidance::TurnBearing PostTurnBearing(const EdgeID /*eid*/) const override final
     {
-        return util::guidance::TurnBearing{0.0};
+        return guidance::TurnBearing{0.0};
     }
 
     bool HasLaneData(const EdgeID /*id*/) const override final { return true; };
@@ -240,7 +240,7 @@ class MockBaseDataFacade : public engine::datafacade::BaseDataFacade
     {
         return {{0, 0}, 0};
     }
-    extractor::guidance::TurnLaneDescription
+    extractor::TurnLaneDescription
     GetTurnDescription(const LaneDescriptionID /*lane_description_id*/) const override final
     {
         return {};

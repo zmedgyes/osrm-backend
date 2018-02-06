@@ -1,7 +1,6 @@
 #ifndef SCRIPTING_ENVIRONMENT_HPP
 #define SCRIPTING_ENVIRONMENT_HPP
 
-#include "extractor/guidance/turn_lane_types.hpp"
 #include "extractor/internal_extractor_edge.hpp"
 #include "extractor/profile_properties.hpp"
 #include "extractor/restriction.hpp"

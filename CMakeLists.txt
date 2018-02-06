@@ -126,7 +126,8 @@ configure_file(
 )
 file(GLOB UtilGlob src/util/*.cpp src/util/*/*.cpp)
 file(GLOB ExtractorGlob src/extractor/*.cpp src/extractor/*/*.cpp)
-file(GLOB PartitionerGlob src/partition/*.cpp)
+file(GLOB GuidanceGlob src/guidance/*.cpp src/extractor/intersection/*.cpp)
+file(GLOB PartitionerGlob src/partitioner/*.cpp)
 file(GLOB CustomizerGlob src/customize/*.cpp)
 file(GLOB ContractorGlob src/contractor/*.cpp)
 file(GLOB UpdaterGlob src/updater/*.cpp)
@@ -137,6 +138,7 @@ file(GLOB ErrorcodesGlob src/osrm/errorcodes.cpp)
 
 add_library(UTIL OBJECT ${UtilGlob})
 add_library(EXTRACTOR OBJECT ${ExtractorGlob})
+add_library(GUIDANCE OBJECT ${GuidanceGlob})
 add_library(PARTITIONER OBJECT ${PartitionerGlob})
 add_library(CUSTOMIZER OBJECT ${CustomizerGlob})
 add_library(CONTRACTOR OBJECT ${ContractorGlob})
@@ -156,8 +158,9 @@ add_executable(osrm-datastore src/tools/store.cpp $<TARGET_OBJECTS:UTIL>)
 add_library(osrm src/osrm/osrm.cpp $<TARGET_OBJECTS:ENGINE> $<TARGET_OBJECTS:UTIL> $<TARGET_OBJECTS:STORAGE>)
 add_library(osrm_contract src/osrm/contractor.cpp $<TARGET_OBJECTS:CONTRACTOR> $<TARGET_OBJECTS:UTIL>)
 add_library(osrm_extract src/osrm/extractor.cpp $<TARGET_OBJECTS:EXTRACTOR> $<TARGET_OBJECTS:UTIL>)
-add_library(osrm_partition $<TARGET_OBJECTS:PARTITIONER> $<TARGET_OBJECTS:UTIL>)
-add_library(osrm_customize $<TARGET_OBJECTS:CUSTOMIZER> $<TARGET_OBJECTS:UTIL>)
+add_library(osrm_guidance $<TARGET_OBJECTS:GUIDANCE> $<TARGET_OBJECTS:UTIL>)
+add_library(osrm_partition src/osrm/partitioner.cpp $<TARGET_OBJECTS:PARTITIONER> $<TARGET_OBJECTS:UTIL>)
+add_library(osrm_customize src/osrm/customizer.cpp $<TARGET_OBJECTS:CUSTOMIZER> $<TARGET_OBJECTS:UTIL>)
 add_library(osrm_update $<TARGET_OBJECTS:UPDATER> $<TARGET_OBJECTS:UTIL>)
 add_library(osrm_store $<TARGET_OBJECTS:STORAGE> $<TARGET_OBJECTS:UTIL>)
 
@@ -624,6 +627,12 @@ set(EXTRACTOR_LIBRARIES
     ${TBB_LIBRARIES}
     ${ZLIB_LIBRARY}
     ${MAYBE_COVERAGE_LIBRARIES})
+set(GUIDANCE_LIBRARIES
+    ${BOOST_BASE_LIBRARIES}
+    ${CMAKE_THREAD_LIBS_INIT}
+    ${USED_LUA_LIBRARIES}
+    ${TBB_LIBRARIES}
+    ${MAYBE_COVERAGE_LIBRARIES})
 set(PARTITIONER_LIBRARIES
     ${BOOST_ENGINE_LIBRARIES}
     ${CMAKE_THREAD_LIBS_INIT}
@@ -670,13 +679,14 @@ set(UTIL_LIBRARIES
     ${CMAKE_THREAD_LIBS_INIT}
     ${MAYBE_STXXL_LIBRARY}
     ${TBB_LIBRARIES}
-    ${MAYBE_COVERAGE_LIBRARIES})
+    ${MAYBE_COVERAGE_LIBRARIES}
+    ${ZLIB_LIBRARY})
 
 # Libraries
 target_link_libraries(osrm ${ENGINE_LIBRARIES})
 target_link_libraries(osrm_update ${UPDATER_LIBRARIES})
 target_link_libraries(osrm_contract ${CONTRACTOR_LIBRARIES} osrm_update osrm_store)
-target_link_libraries(osrm_extract ${EXTRACTOR_LIBRARIES})
+target_link_libraries(osrm_extract osrm_guidance ${EXTRACTOR_LIBRARIES})
 target_link_libraries(osrm_partition ${PARTITIONER_LIBRARIES})
 target_link_libraries(osrm_customize ${CUSTOMIZER_LIBRARIES} osrm_update osrm_store)
 target_link_libraries(osrm_store ${STORAGE_LIBRARIES})
@@ -723,14 +733,14 @@ file(GLOB ParametersGlob include/engine/api/*_parameters.hpp)
 set(EngineHeader include/engine/status.hpp include/engine/engine_config.hpp include/engine/hint.hpp include/engine/bearing.hpp include/engine/approach.hpp include/engine/phantom_node.hpp)
 set(UtilHeader include/util/coordinate.hpp include/util/json_container.hpp include/util/typedefs.hpp include/util/alias.hpp include/util/exception.hpp include/util/bearing.hpp)
 set(ExtractorHeader include/extractor/extractor.hpp include/storage/io_config.hpp include/extractor/extractor_config.hpp include/extractor/travel_mode.hpp)
-set(PartitionerHeader include/partition/partitioner.hpp include/partition/partition_config.hpp)
+set(PartitionerHeader include/partitioner/partitioner.hpp include/partitioner/partitioner_config.hpp)
 set(ContractorHeader include/contractor/contractor.hpp include/contractor/contractor_config.hpp)
 set(StorageHeader include/storage/storage.hpp include/storage/io_config.hpp include/storage/storage_config.hpp)
 install(FILES ${EngineHeader} DESTINATION include/osrm/engine)
 install(FILES ${UtilHeader} DESTINATION include/osrm/util)
 install(FILES ${StorageHeader} DESTINATION include/osrm/storage)
 install(FILES ${ExtractorHeader} DESTINATION include/osrm/extractor)
-install(FILES ${PartitionerHeader} DESTINATION include/osrm/partition)
+install(FILES ${PartitionerHeader} DESTINATION include/osrm/partitioner)
 install(FILES ${ContractorHeader} DESTINATION include/osrm/contractor)
 install(FILES ${LibraryGlob} DESTINATION include/osrm)
 install(FILES ${ParametersGlob} DESTINATION include/osrm/engine/api)

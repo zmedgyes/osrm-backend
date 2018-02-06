@@ -1,7 +1,8 @@
 #ifndef OSRM_ENGINE_ROUTING_BASE_HPP
 #define OSRM_ENGINE_ROUTING_BASE_HPP
 
-#include "extractor/guidance/turn_instruction.hpp"
+#include "guidance/turn_bearing.hpp"
+#include "guidance/turn_instruction.hpp"
 
 #include "engine/algorithm.hpp"
 #include "engine/datafacade.hpp"
@@ -10,7 +11,6 @@
 #include "engine/search_engine_data.hpp"
 
 #include "util/coordinate_calculation.hpp"
-#include "util/guidance/turn_bearing.hpp"
 #include "util/typedefs.hpp"
 
 #include <boost/assert.hpp>
@@ -199,14 +199,14 @@ void annotatePath(const FacadeT &facade,
                                              0,
                                              duration_vector[segment_idx],
                                              0,
-                                             extractor::guidance::TurnInstruction::NO_TURN(),
+                                             guidance::TurnInstruction::NO_TURN(),
                                              {{0, INVALID_LANEID}, INVALID_LANE_DESCRIPTIONID},
                                              travel_mode,
                                              classes,
                                              EMPTY_ENTRY_CLASS,
                                              datasource_vector[segment_idx],
-                                             util::guidance::TurnBearing(0),
-                                             util::guidance::TurnBearing(0),
+                                             osrm::guidance::TurnBearing(0),
+                                             osrm::guidance::TurnBearing(0),
                                              is_left_hand_driving});
         }
         BOOST_ASSERT(unpacked_path.size() > 0);
@@ -273,14 +273,14 @@ void annotatePath(const FacadeT &facade,
                      0,
                      duration_vector[segment_idx],
                      0,
-                     extractor::guidance::TurnInstruction::NO_TURN(),
+                     guidance::TurnInstruction::NO_TURN(),
                      {{0, INVALID_LANEID}, INVALID_LANE_DESCRIPTIONID},
                      facade.GetTravelMode(target_node_id),
                      facade.GetClassData(target_node_id),
                      EMPTY_ENTRY_CLASS,
                      datasource_vector[segment_idx],
-                     util::guidance::TurnBearing(0),
-                     util::guidance::TurnBearing(0),
+                     guidance::TurnBearing(0),
+                     guidance::TurnBearing(0),
                      is_target_left_hand_driving});
     }
 
