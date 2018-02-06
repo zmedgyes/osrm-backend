@@ -11,8 +11,6 @@ namespace util
 {
 class NameTable;
 }
-namespace extractor
-{
 namespace guidance
 {
 
@@ -29,12 +27,9 @@ struct EdgeInfo
 
     bool reversed;
 
-    // 0 - outgoing (forward), 1 - incoming (reverse), 2 - both outgoing and incoming
-    int direction;
-
     extractor::ClassData road_class;
 
-    NodeBasedEdgeClassification flags;
+    extractor::NodeBasedEdgeClassification flags;
 
     struct LessName
     {
@@ -42,8 +37,7 @@ struct EdgeInfo
     };
 };
 
-std::unordered_set<EdgeID>
-osrm::extractor::guidance::findSegregatedNodes(const NodeBasedGraphFactory &factory,
+std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFactory &factory,
                                                const util::NameTable &names)
 {
 
@@ -89,7 +83,6 @@ osrm::extractor::guidance::findSegregatedNodes(const NodeBasedGraphFactory &fact
                 node,
                 name,
                 edge_data.reversed,
-                edge_data.reversed ? 1 : 0,
                 annotation[edge_data.annotation_data].classes,
                 edge_data.flags};
     };
@@ -124,7 +117,7 @@ osrm::extractor::guidance::findSegregatedNodes(const NodeBasedGraphFactory &fact
                 if (is_bidirectional(edge_inbound_data.flags) ||
                     edge_inbound_data.flags.road_classification.IsLinkClass() ||
                     (edge_inbound_data.flags.road_classification.GetClass() >
-                     RoadPriorityClass::SIDE_RESIDENTIAL))
+                     extractor::RoadPriorityClass::SIDE_RESIDENTIAL))
                 {
                     continue;
                 }
@@ -161,7 +154,7 @@ osrm::extractor::guidance::findSegregatedNodes(const NodeBasedGraphFactory &fact
                 if (is_bidirectional(edge_to.flags) ||
                     edge_to.flags.road_classification.IsLinkClass() ||
                     (edge_to.flags.road_classification.GetClass() >
-                     RoadPriorityClass::SIDE_RESIDENTIAL))
+                     extractor::RoadPriorityClass::SIDE_RESIDENTIAL))
                 {
                     continue;
                 }
@@ -215,22 +208,6 @@ osrm::extractor::guidance::findSegregatedNodes(const NodeBasedGraphFactory &fact
             return e1.node < e2.node;
         });
 
-        // Merge equal infos with correct direction.
-        auto curr = info.begin();
-        auto next = curr;
-        while (++next != info.end())
-        {
-            if (curr->node == next->node)
-            {
-                BOOST_ASSERT(curr->name == next->name);
-                BOOST_ASSERT(curr->road_class == next->road_class);
-                BOOST_ASSERT(curr->direction != next->direction);
-                curr->direction = 2;
-            }
-            else
-                curr = next;
-        }
-
         info.erase(
             std::unique(info.begin(),
                         info.end(),
@@ -280,5 +257,4 @@ osrm::extractor::guidance::findSegregatedNodes(const NodeBasedGraphFactory &fact
 }
 
 } // namespace guidance
-} // namespace extractor
 } // namespace osrm
