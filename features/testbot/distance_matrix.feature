@@ -76,7 +76,6 @@ Feature: Basic Distance Matrix
             | ac    | highway  | yes  | not drivable for exclude=toll and exclude=motorway,toll |
             | bd    | highway  | yes  | not drivable for exclude=toll |
 
-
         When I request a travel time matrix I should get
             |   | a  | b  | c  | d  |
             | a | 0  | 40 | 15 | 25 |

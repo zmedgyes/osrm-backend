@@ -104,6 +104,7 @@ class DataWatchdogImpl<AlgorithmT, datafacade::ContiguousInternalMemoryDataFacad
             }
             if (updatable_region.timestamp != updatable_shared_region->timestamp)
             {
+
                 updatable_region = *updatable_shared_region;
             }
 
