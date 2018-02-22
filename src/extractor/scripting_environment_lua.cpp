@@ -7,6 +7,7 @@
 #include "extractor/extraction_turn.hpp"
 #include "extractor/extraction_way.hpp"
 #include "extractor/internal_extractor_edge.hpp"
+#include "extractor/maneuver_override_relation_parser.hpp"
 #include "extractor/profile_properties.hpp"
 #include "extractor/query_node.hpp"
 #include "extractor/raster_source.hpp"
@@ -217,6 +218,22 @@ void Sol2ScriptingEnvironment::InitContext(LuaScriptingContext &context)
                                                  "valid",
                                                  &osmium::Location::valid);
 
+    auto get_location_tag = [](auto &context, const auto &location, const char *key) {
+        if (context.location_dependent_data.empty())
+            return sol::object(sol::nil);
+
+        const LocationDependentData::point_t point{location.lon(), location.lat()};
+        if (!boost::geometry::equals(context.last_location_point, point))
+        {
+            context.last_location_point = point;
+            context.last_location_indexes =
+                context.location_dependent_data.GetPropertyIndexes(point);
+        }
+
+        auto value = context.location_dependent_data.FindByKey(context.last_location_indexes, key);
+        return boost::apply_visitor(to_lua_object(context.state), value);
+    };
+
     context.state.new_usertype<osmium::Way>(
         "Way",
         "get_value_by_key",
@@ -228,37 +245,29 @@ void Sol2ScriptingEnvironment::InitContext(LuaScriptingContext &context)
         "get_nodes",
         [](const osmium::Way &way) { return sol::as_table(way.nodes()); },
         "get_location_tag",
-        [&context](const osmium::Way &way, const char *key) {
-            if (context.location_dependent_data.empty())
-                return sol::object(sol::nil);
+        [&context, &get_location_tag](const osmium::Way &way, const char *key) {
             // HEURISTIC: use a single node (last) of the way to localize the way
             // For more complicated scenarios a proper merging of multiple tags
             // at one or many locations must be provided
             const auto &nodes = way.nodes();
             const auto &location = nodes.back().location();
-            const LocationDependentData::point_t point{location.lon(), location.lat()};
-
-            if (!boost::geometry::equals(context.last_location_point, point))
-            {
-                context.last_location_point = point;
-                context.last_location_indexes =
-                    context.location_dependent_data.GetPropertyIndexes(point);
-            }
-
-            auto value =
-                context.location_dependent_data.FindByKey(context.last_location_indexes, key);
-            return boost::apply_visitor(to_lua_object(context.state), value);
+            return get_location_tag(context, location, key);
         });
 
-    context.state.new_usertype<osmium::Node>("Node",
-                                             "location",
-                                             &osmium::Node::location,
-                                             "get_value_by_key",
-                                             &get_value_by_key<osmium::Node>,
-                                             "id",
-                                             &osmium::Node::id,
-                                             "version",
-                                             &osmium::Node::version);
+    context.state.new_usertype<osmium::Node>(
+        "Node",
+        "location",
+        &osmium::Node::location,
+        "get_value_by_key",
+        &get_value_by_key<osmium::Node>,
+        "id",
+        &osmium::Node::id,
+        "version",
+        &osmium::Node::version,
+        "get_location_tag",
+        [&context, &get_location_tag](const osmium::Node &node, const char *key) {
+            return get_location_tag(context, node.location(), key);
+        });
 
     context.state.new_usertype<ExtractionNode>("ResultNode",
                                                "traffic_lights",
@@ -842,10 +851,12 @@ LuaScriptingContext &Sol2ScriptingEnvironment::GetSol2Context()
 void Sol2ScriptingEnvironment::ProcessElements(
     const osmium::memory::Buffer &buffer,
     const RestrictionParser &restriction_parser,
+    const ManeuverOverrideRelationParser &maneuver_override_parser,
     const ExtractionRelationContainer &relations,
     std::vector<std::pair<const osmium::Node &, ExtractionNode>> &resulting_nodes,
     std::vector<std::pair<const osmium::Way &, ExtractionWay>> &resulting_ways,
-    std::vector<InputConditionalTurnRestriction> &resulting_restrictions)
+    std::vector<InputConditionalTurnRestriction> &resulting_restrictions,
+    std::vector<InputManeuverOverride> &resulting_maneuver_overrides)
 {
     ExtractionNode result_node;
     ExtractionWay result_way;
@@ -884,6 +895,10 @@ void Sol2ScriptingEnvironment::ProcessElements(
             if (auto result_res = restriction_parser.TryParse(relation))
             {
                 resulting_restrictions.push_back(*result_res);
+            }
+            else if (auto result_res = maneuver_override_parser.TryParse(relation))
+            {
+                resulting_maneuver_overrides.push_back(*result_res);
             }
         }
         break;
