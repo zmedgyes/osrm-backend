@@ -17,6 +17,7 @@
 #include "extractor/edge_based_edge.hpp"
 #include "extractor/edge_based_node.hpp"
 #include "extractor/files.hpp"
+#include "extractor/maneuver_override.hpp"
 #include "extractor/packed_osm_ids.hpp"
 #include "extractor/profile_properties.hpp"
 #include "extractor/query_node.hpp"
@@ -438,6 +439,18 @@ void Storage::PopulateLayout(DataLayout &layout)
         const auto lane_tuple_count = lane_data_file.ReadElementCount64();
         layout.SetBlockSize<util::guidance::LaneTupleIdPair>(DataLayout::TURN_LANE_DATA,
                                                              lane_tuple_count);
+    }
+
+    // load maneuver overrides
+    {
+        io::FileReader maneuver_overrides_file(config.GetPath(".osrm.maneuver_overrides"),
+                                               io::FileReader::VerifyFingerprint);
+        const auto number_of_overrides =
+            maneuver_overrides_file.ReadVectorSize<extractor::StorageManeuverOverride>();
+        layout.SetBlockSize<extractor::StorageManeuverOverride>(DataLayout::MANEUVER_OVERRIDES,
+                                                                number_of_overrides);
+        const auto number_of_nodes = maneuver_overrides_file.ReadVectorSize<NodeID>();
+        layout.SetBlockSize<NodeID>(DataLayout::MANEUVER_OVERRIDE_NODE_SEQUENCES, number_of_nodes);
     }
 
     {
@@ -1073,6 +1086,25 @@ void Storage::PopulateData(const DataLayout &layout, char *memory_ptr)
                     " does not equal to checksum " + std::to_string(turns_connectivity_checksum) +
                     " in " + config.GetPath(".osrm.edges").string());
             }
+        }
+
+        // load maneuver overrides
+        {
+            const auto maneuver_overrides_ptr =
+                layout.GetBlockPtr<extractor::StorageManeuverOverride, true>(
+                    memory_ptr, DataLayout::MANEUVER_OVERRIDES);
+            const auto maneuver_override_node_sequences_ptr = layout.GetBlockPtr<NodeID, true>(
+                memory_ptr, DataLayout::MANEUVER_OVERRIDE_NODE_SEQUENCES);
+
+            util::vector_view<extractor::StorageManeuverOverride> maneuver_overrides(
+                maneuver_overrides_ptr, layout.num_entries[DataLayout::MANEUVER_OVERRIDES]);
+            util::vector_view<NodeID> maneuver_override_node_sequences(
+                maneuver_override_node_sequences_ptr,
+                layout.num_entries[DataLayout::MANEUVER_OVERRIDE_NODE_SEQUENCES]);
+
+            extractor::files::readManeuverOverrides(config.GetPath(".osrm.maneuver_overrides"),
+                                                    maneuver_overrides,
+                                                    maneuver_override_node_sequences);
         }
     }
 }
