@@ -75,6 +75,15 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
             coordExtractor.GetCoordinateCloseToTurn(intersection_node, to_edge_id, false, to_node);
         auto const node_from = coordExtractor.GetCoordinateCloseToTurn(
             intersection_node, from_edge_id_outgoing, false, from_node);
+
+        // util::Log() << "from edge id :: " << from_edge_id << ", to edge id :: " << to_edge_id;
+        // util::Log() << "intersection node :: " << intersection_node;
+        // util::Log() << "coords of intersection node :: " << coordinates[intersection_node].lat <<
+        // ", " << coordinates[intersection_node].lon;
+        // util::Log() << "turn angle before conversion :: " <<
+        // util::coordinate_calculation::computeAngle(
+        // node_from, coordinates[intersection_node], node_to) ;
+
         return util::coordinate_calculation::computeAngle(
             node_from, coordinates[intersection_node], node_to);
     };
@@ -85,6 +94,7 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
         auto const id = annotation[edge_data.annotation_data].name_id;
         BOOST_ASSERT(id != INVALID_NAMEID);
         auto const name = names.GetNameForID(id);
+        // util::Log() << "node :: " << node << ", edge_id :: " << edge_id << ", name :: " << name;
         return {edge_id,
                 node,
                 name,
@@ -100,6 +110,11 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
     auto is_internal_straight = [](auto const turn_degree) {
         return (turn_degree > INTERNAL_STRAIGHT_LOWER_BOUND &&
                 turn_degree < INTERNAL_STRAIGHT_UPPER_BOUND);
+    };
+
+    // Lambda to convert an osrm turn angle to a valhalla turn angle
+    const auto convert_turn_angle = [](auto const osrm_turn_angle) {
+        return (osrm_turn_angle <= 180) ? 180 - osrm_turn_angle : 540 - osrm_turn_angle;
     };
 
     // Lambda to check if the turn set includes a right turn type
@@ -140,7 +155,10 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
             {
                 // Store the turn type of incoming driveable edges.
                 incoming_turn_type.insert(guidance::getTurnDirection(
-                    get_angle(edge_from.node, edge_inbound, current.edge)));
+                    convert_turn_angle(get_angle(edge_from.node, edge_inbound, current.edge))));
+                // util::Log() << "INCOMING TURN ANGLES :: after conversion :: " <<
+                // convert_turn_angle(
+                // get_angle(edge_from.node, edge_inbound, current.edge));
 
                 // Skip any inbound edges not oneway (i.e. skip bidirectional)
                 // and link edge
@@ -160,7 +178,6 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
                 }
                 // If we are here the edge is a candidate oneway inbound
                 oneway_inbound = true;
-                break;
             }
         }
 
@@ -180,8 +197,11 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
             if (!edge_to.reversed)
             {
                 // Store outgoing turn type for any driveable edges
-                outgoing_turn_type.insert(
-                    guidance::getTurnDirection(get_angle(node1, current.edge, edge_to.edge)));
+                outgoing_turn_type.insert(guidance::getTurnDirection(
+                    convert_turn_angle(get_angle(node1, current.edge, edge_to.edge))));
+                // util::Log() << "OUTGOING TURN ANGLES:: after conversion :: " <<
+                // convert_turn_angle(
+                //                  get_angle(node1, current.edge, edge_to.edge));
 
                 // Skip any outbound edges not oneway (i.e. skip bidirectional)
                 // and link edge
@@ -203,7 +223,6 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
 
                 // If we are here the edge is a candidate oneway outbound
                 oneway_outbound = true;
-                break;
             }
         }
         // Must have outbound oneway at end node (exclude edges that are nearly
