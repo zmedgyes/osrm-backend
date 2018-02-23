@@ -179,6 +179,9 @@ void processRoundaboutGroups(const std::pair<RouteStepIterator, RouteStepIterato
 // that we come across.
 std::vector<RouteStep> handleRoundabouts(std::vector<RouteStep> steps)
 {
+    //GDG
+    std::cout << __FILE__ << ":" << __LINE__ << " | handleRoundabouts TOP" << std::endl;
+
     // check if a step has roundabout type
     const auto has_roundabout_type = [](auto const &step) {
         return hasRoundaboutType(step.maneuver.instruction);
@@ -243,6 +246,9 @@ std::vector<RouteStep> handleRoundabouts(std::vector<RouteStep> steps)
 // usually not be as relevant.
 void trimShortSegments(std::vector<RouteStep> &steps, LegGeometry &geometry)
 {
+    //GDG
+    std::cout << __FILE__ << ":" << __LINE__ << " | trimShortSegments TOP" << std::endl;
+
     if (steps.size() < 2 || geometry.locations.size() <= 2)
         return;
 
@@ -448,6 +454,9 @@ std::vector<RouteStep> assignRelativeLocations(std::vector<RouteStep> steps,
                                                const PhantomNode &source_node,
                                                const PhantomNode &target_node)
 {
+    //GDG
+    std::cout << __FILE__ << ":" << __LINE__ << " | assignRelativeLocations TOP" << std::endl;
+
     // We report the relative position of source/target to the road only within a range that is
     // sufficiently different but not full of the path
     BOOST_ASSERT(steps.size() >= 2);
@@ -491,6 +500,9 @@ std::vector<RouteStep> assignRelativeLocations(std::vector<RouteStep> steps,
 
 LegGeometry resyncGeometry(LegGeometry leg_geometry, const std::vector<RouteStep> &steps)
 {
+    //GDG
+    std::cout << __FILE__ << ":" << __LINE__ << " | resyncGeometry TOP" << std::endl;
+
     // The geometry uses an adjacency array-like structure for representation.
     // To sync it back up with the steps, we cann add a segment for every step.
     leg_geometry.segment_offsets.clear();
@@ -514,6 +526,9 @@ LegGeometry resyncGeometry(LegGeometry leg_geometry, const std::vector<RouteStep
 
 std::vector<RouteStep> buildIntersections(std::vector<RouteStep> steps)
 {
+    //GDG
+    std::cout << __FILE__ << ":" << __LINE__ << " | buildIntersections TOP" << std::endl;
+
     std::size_t last_valid_instruction = 0;
     for (std::size_t step_index = 0; step_index < steps.size(); ++step_index)
     {

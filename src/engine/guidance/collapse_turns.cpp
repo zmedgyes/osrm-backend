@@ -325,6 +325,9 @@ void suppressStep(RouteStep &step_at_turn_location, RouteStep &step_after_turn_l
 OSRM_ATTR_WARN_UNUSED
 RouteSteps collapseTurnInstructions(RouteSteps steps)
 {
+    //GDG
+    std::cout << __FILE__ << ":" << __LINE__ << " | collapseTurnInstructions TOP" << std::endl;
+
     // make sure we can safely iterate over all steps (has depart/arrive with TurnType::NoTurn)
     BOOST_ASSERT(!hasTurnType(steps.front()) && !hasTurnType(steps.back()));
     BOOST_ASSERT(hasWaypointType(steps.front()) && hasWaypointType(steps.back()));
@@ -335,6 +338,10 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
     // start of with no-op
     for (auto current_step = steps.begin() + 1; current_step + 1 != steps.end(); ++current_step)
     {
+        //GDG
+        std::cout << __FILE__ << ":" << __LINE__ << " | collapseTurnInstructions for loop TOP -----------------------" << std::endl;
+        std::cout << __FILE__ << ":" << __LINE__ << " | current_step=" << current_step->ToString() << std::endl;
+
         if (entersRoundabout(current_step->maneuver.instruction) ||
             staysOnRoundabout(current_step->maneuver.instruction))
         {
@@ -358,6 +365,9 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
         // handle all situations involving the sliproad turn type
         if (hasTurnType(*current_step, TurnType::Sliproad))
         {
+            //GDG
+            std::cout << __FILE__ << ":" << __LINE__ << " | handleSliproad" << std::endl;
+
             handleSliproad(current_step);
             continue;
         }
@@ -378,6 +388,9 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
         // directions (e.g. right + left) with a very short segment in between
         if (isStaggeredIntersection(previous_step, current_step, next_step))
         {
+            //GDG
+            std::cout << __FILE__ << ":" << __LINE__ << " | isStaggeredIntersection" << std::endl;
+
             combineRouteSteps(*current_step,
                               *next_step,
                               StaggeredTurnStrategy(*previous_step),
@@ -386,6 +399,9 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
         }
         else if (isUTurn(previous_step, current_step, next_step))
         {
+            //GDG
+            std::cout << __FILE__ << ":" << __LINE__ << " | isUTurn" << std::endl;
+
             combineRouteSteps(
                 *current_step,
                 *next_step,
@@ -395,6 +411,9 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
         }
         else if (isNameOszillation(previous_step, current_step, next_step))
         {
+            //GDG
+            std::cout << __FILE__ << ":" << __LINE__ << " | isNameOszillation" << std::endl;
+
             // first deactivate the second name switch
             suppressStep(*current_step, *next_step);
             // and then the first (to ensure both iterators to be valid)
@@ -403,6 +422,9 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
         else if (maneuverPreceededByNameChange(previous_step, current_step, next_step) ||
                  maneuverPreceededBySuppressedDirection(current_step, next_step))
         {
+            //GDG
+            std::cout << __FILE__ << ":" << __LINE__ << " | maneuverPreceededByNameChange OR maneuverPreceededBySuppressedDirection" << std::endl;
+
             const auto strategy = AdjustToCombinedTurnStrategy(*previous_step);
             strategy(*next_step, *current_step);
             // suppress previous step
@@ -413,6 +435,31 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
                  maneuverSucceededBySuppressedDirection(current_step, next_step) ||
                  closeChoicelessTurnAfterTurn(current_step, next_step))
         {
+            //GDG
+            std::cout << __FILE__ << ":" << __LINE__ << "          IGNORE DEBUG | maneuverSucceededByNameChange OR nameChangeImmediatelyAfterSuppressed OR maneuverSucceededBySuppressedDirection OR closeChoicelessTurnAfterTurn" << std::endl;
+
+            //GDG
+            if (maneuverSucceededByNameChange(current_step, next_step))
+            {
+                //GDG
+                std::cout << __FILE__ << ":" << __LINE__ << "          IGNORE DEBUG | maneuverSucceededByNameChange" << std::endl;
+            }
+            else if (nameChangeImmediatelyAfterSuppressed(current_step, next_step))
+            {
+                //GDG
+                std::cout << __FILE__ << ":" << __LINE__ << "          IGNORE DEBUG | nameChangeImmediatelyAfterSuppressed" << std::endl;
+            }
+            else if (maneuverSucceededBySuppressedDirection(current_step, next_step))
+            {
+                //GDG
+                std::cout << __FILE__ << ":" << __LINE__ << "          IGNORE DEBUG | maneuverSucceededBySuppressedDirection" << std::endl;
+            }
+            else if (closeChoicelessTurnAfterTurn(current_step, next_step))
+            {
+                //GDG
+                std::cout << __FILE__ << ":" << __LINE__ << "          IGNORE DEBUG | closeChoicelessTurnAfterTurn" << std::endl;
+            }
+
             combineRouteSteps(*current_step,
                               *next_step,
                               AdjustToCombinedTurnStrategy(*previous_step),
@@ -421,6 +468,9 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
         }
         else if (straightTurnFollowedByChoiceless(current_step, next_step))
         {
+            //GDG
+            std::cout << __FILE__ << ":" << __LINE__ << " | straightTurnFollowedByChoiceless" << std::endl;
+
             combineRouteSteps(*current_step,
                               *next_step,
                               AdjustToCombinedTurnStrategy(*previous_step),
@@ -429,6 +479,8 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
         }
         else if (suppressedStraightBetweenTurns(previous_step, current_step, next_step))
         {
+            //GDG
+            std::cout << __FILE__ << ":" << __LINE__ << " | suppressedStraightBetweenTurns" << std::endl;
             const auto far_back_step = findPreviousTurn(previous_step);
             previous_step->ElongateBy(*current_step);
             current_step->Invalidate();
@@ -452,6 +504,9 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
         const auto new_next_step = findNextTurn(current_step);
         if (doubleChoiceless(current_step, new_next_step))
         {
+            //GDG
+            std::cout << __FILE__ << ":" << __LINE__ << " | doubleChoiceless" << std::endl;
+
             combineRouteSteps(*current_step,
                               *new_next_step,
                               AdjustToCombinedTurnStrategy(*previous_step),
@@ -460,11 +515,16 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
         }
         if (!hasWaypointType(*previous_step))
         {
+            //GDG
+            std::cout << __FILE__ << ":" << __LINE__ << " | NOT hasWaypointType" << std::endl;
+
             const auto far_back_step = findPreviousTurn(previous_step);
             // due to name changes, we can find u-turns a bit late. Thats why we check far back as
             // well
             if (isUTurn(far_back_step, previous_step, current_step))
             {
+                //GDG
+                std::cout << __FILE__ << ":" << __LINE__ << " | isUTurn" << std::endl;
                 combineRouteSteps(
                     *previous_step,
                     *current_step,
@@ -474,6 +534,9 @@ RouteSteps collapseTurnInstructions(RouteSteps steps)
             }
         }
     }
+    //GDG
+    std::cout << __FILE__ << ":" << __LINE__ << " | collapseTurnInstructions BOTTOM" << std::endl;
+
     return steps;
 }
 

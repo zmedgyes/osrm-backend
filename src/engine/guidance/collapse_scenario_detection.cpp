@@ -317,30 +317,58 @@ bool suppressedStraightBetweenTurns(const RouteStepIterator step_entering_inters
 bool maneuverSucceededByNameChange(const RouteStepIterator step_entering_intersection,
                                    const RouteStepIterator step_leaving_intersection)
 {
+    //GDG
+    std::cout << __FILE__ << ":" << __LINE__ << " | maneuverSucceededByNameChange TOP" << std::endl;
+
     if (!basicCollapsePreconditions(step_entering_intersection, step_leaving_intersection))
+    {
+        //GDG
+        std::cout << __FILE__ << ":" << __LINE__ << " | maneuverSucceededByNameChange return=false" << std::endl;
         return false;
+    }
 
     const auto short_and_undisturbed = isShortAndUndisturbed(*step_entering_intersection);
+    //GDG
+    if (short_and_undisturbed)
+        std::cout << __FILE__ << ":" << __LINE__ << " | short_and_undisturbed" << std::endl;
+
     const auto followed_by_name_change =
         hasTurnType(*step_leaving_intersection, TurnType::NewName) ||
         ((hasTurnType(*step_leaving_intersection, TurnType::Turn) ||
           hasTurnType(*step_leaving_intersection, TurnType::Continue)) &&
          hasModifier(*step_leaving_intersection, DirectionModifier::Straight));
+    //GDG
+    if (followed_by_name_change)
+        std::cout << __FILE__ << ":" << __LINE__ << " | followed_by_name_change" << std::endl;
 
     const auto is_maneuver = hasTurnType(*step_entering_intersection) &&
                              !hasTurnType(*step_entering_intersection, TurnType::Suppressed);
+    //GDG
+    if (is_maneuver)
+        std::cout << __FILE__ << ":" << __LINE__ << " | is_maneuver" << std::endl;
 
     // a straight name change can overrule max collapse distance
     const auto is_strong_name_change =
         hasTurnType(*step_leaving_intersection, TurnType::NewName) &&
         hasModifier(*step_leaving_intersection, DirectionModifier::Straight) &&
         step_entering_intersection->distance <= 1.5 * MAX_COLLAPSE_DISTANCE;
+    //GDG
+    if (is_strong_name_change)
+        std::cout << __FILE__ << ":" << __LINE__ << " | is_strong_name_change" << std::endl;
 
     // also allow a bit more, if the new name is without choice
     const auto is_choiceless_name_change =
         hasTurnType(*step_leaving_intersection, TurnType::NewName) &&
         numberOfAllowedTurns(*step_leaving_intersection) == 1 &&
         step_entering_intersection->distance <= 1.5 * MAX_COLLAPSE_DISTANCE;
+    //GDG
+    if (is_choiceless_name_change)
+        std::cout << __FILE__ << ":" << __LINE__ << " | is_choiceless_name_change" << std::endl;
+
+    //GDG
+    std::cout << __FILE__ << ":" << __LINE__ << " | maneuverSucceededByNameChange return="
+            << ((short_and_undisturbed || is_strong_name_change || is_choiceless_name_change) &&
+            followed_by_name_change && is_maneuver) << std::endl;
 
     return (short_and_undisturbed || is_strong_name_change || is_choiceless_name_change) &&
            followed_by_name_change && is_maneuver;

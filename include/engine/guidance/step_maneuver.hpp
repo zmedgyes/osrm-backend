@@ -32,6 +32,20 @@ struct StepManeuver
 
     WaypointType waypoint_type;
     unsigned exit;
+
+    //GDG
+    std::string ToString() const
+    {
+        std::string str;
+        str = std::string(" | location=") + location.ToString()
+                + std::string(" | bearing_before=") + std::to_string(bearing_before)
+                + std::string(" | bearing_after=") + std::to_string(bearing_after)
+                + std::string(" | instruction=") + instruction.ToString()
+                + std::string(" | waypoint_type=") + std::to_string((int)waypoint_type)
+                + std::string(" | exit=") + std::to_string(exit);
+        return str;
+    }
+
 };
 
 inline StepManeuver getInvalidStepManeuver()

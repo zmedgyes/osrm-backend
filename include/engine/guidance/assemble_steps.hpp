@@ -45,6 +45,9 @@ inline std::vector<RouteStep> assembleSteps(const datafacade::BaseDataFacade &fa
                                             const bool source_traversed_in_reverse,
                                             const bool target_traversed_in_reverse)
 {
+    //GDG
+    std::cout << __FILE__ << ":" << __LINE__ << " | assembleSteps TOP" << std::endl;
+
     const double weight_multiplier = facade.GetWeightMultiplier();
 
     const double constexpr ZERO_DURATION = 0., ZERO_DISTANCE = 0., ZERO_WEIGHT = 0;

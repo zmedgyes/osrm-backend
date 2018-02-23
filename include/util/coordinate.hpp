@@ -216,6 +216,17 @@ struct Coordinate
     bool IsValid() const;
     friend bool operator==(const Coordinate lhs, const Coordinate rhs);
     friend bool operator!=(const Coordinate lhs, const Coordinate rhs);
+
+    //GDG
+    std::string ToString() const
+    {
+        std::string str;
+        str = std::to_string(static_cast<double>(toFloating(lat)))
+           + std::string(",")
+           + std::to_string(static_cast<double>(toFloating(lon)));
+        return str;
+    }
+
 };
 
 /**

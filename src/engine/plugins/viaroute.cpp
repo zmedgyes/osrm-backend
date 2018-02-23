@@ -30,6 +30,9 @@ Status ViaRoutePlugin::HandleRequest(const RoutingAlgorithmsInterface &algorithm
                                      const api::RouteParameters &route_parameters,
                                      util::json::Object &json_result) const
 {
+    //GDG
+    std::cout << __FILE__ << ":" << __LINE__ << " | ViaRoutePlugin::HandleRequest TOP" << std::endl;
+
     BOOST_ASSERT(route_parameters.IsValid());
 
     if (!algorithms.HasShortestPathSearch() && route_parameters.coordinates.size() > 2)

@@ -138,6 +138,15 @@ struct TurnInstruction
     {
         return {TurnType::Suppressed, modifier};
     }
+
+    //GDG
+    std::string ToString() const
+    {
+        std::string str;
+        str = std::string(" >> type=") + std::to_string((int)type)
+                + std::string(" | direction_modifier=") + std::to_string((int)direction_modifier);
+        return str;
+    }
 };
 
 static_assert(sizeof(TurnInstruction) == 1, "TurnInstruction does not fit a byte");

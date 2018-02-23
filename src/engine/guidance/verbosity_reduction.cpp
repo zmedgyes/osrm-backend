@@ -14,6 +14,9 @@ using namespace osrm::guidance;
 
 std::vector<RouteStep> suppressShortNameSegments(std::vector<RouteStep> steps)
 {
+    //GDG
+    std::cout << __FILE__ << ":" << __LINE__ << " | suppressShortNameSegments TOP" << std::endl;
+
     // guard against empty routes, even though they shouldn't happen
     if (steps.empty())
         return steps;

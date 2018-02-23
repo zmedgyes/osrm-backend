@@ -43,6 +43,49 @@ struct IntermediateIntersection
     util::guidance::LaneTuple lanes;
     extractor::TurnLaneDescription lane_description;
     std::vector<std::string> classes;
+
+    //GDG
+    std::string ToString() const
+    {
+        std::string str;
+        str = std::string("location=") + location.ToString() + std::string(" | bearings=");
+
+        std::string bearings_str;
+        for (auto bearing : bearings)
+        {
+            if (!bearings_str.empty())
+                bearings_str += std::string(",");
+            bearings_str += std::to_string(bearing);
+        }
+        str += bearings_str + std::string(" | entry=");
+
+        std::string entry_str;
+        for (auto item : entry)
+        {
+            if (!entry_str.empty())
+                entry_str += std::string(",");
+            entry_str += std::to_string(item);
+        }
+        str += entry_str;
+
+        str += std::string(" | in=") + std::to_string(in)
+            + std::string(" | out=") + std::to_string(out)
+            + std::string(" | lanes=") + lanes.ToString()
+            + std::string(" | lane_description=") + std::string("TODO")
+            + std::string(" | classes=");
+
+        std::string classes_str;
+        for (const auto &xclass : classes)
+        {
+            if (!classes_str.empty())
+                classes_str += std::string(",");
+            classes_str += xclass;
+        }
+        str += classes_str;
+
+        return str;
+    }
+
 };
 
 inline IntermediateIntersection getInvalidIntersection()
@@ -111,6 +154,41 @@ struct RouteStep
 
     auto LanesToTheLeft() const;
     auto LanesToTheRight() const;
+
+    //GDG
+    std::string ToString() const
+    {
+        std::string str;
+        str = std::string("name_id=") + std::to_string(name_id)
+                + std::string(" | is_segregated=") + std::string(is_segregated ? "true" : "false")
+                + std::string(" | name=") + name
+                + std::string(" | ref=") + ref
+                + std::string(" | pronunciation=") + pronunciation
+                + std::string(" | destinations=") + destinations
+                + std::string(" | exits=") + exits
+                + std::string(" | rotary_name=") + rotary_name
+                + std::string(" | rotary_pronunciation=") + rotary_pronunciation
+                + std::string(" | duration=") + std::to_string(duration)
+                + std::string(" | distance=") + std::to_string(distance)
+                + std::string(" | weight=") + std::to_string(weight)
+                + std::string(" | mode=") + std::to_string(mode)
+                + std::string(" | geometry_begin=") + std::to_string(geometry_begin)
+                + std::string(" | geometry_end=") + std::to_string(geometry_end)
+                + std::string(" | is_left_hand_driving=") + std::string(is_left_hand_driving ? "true" : "false"
+                + std::string("\n   >>> maneuver=") + maneuver.ToString()
+                + std::string("\n   >>> intersections="));
+        std::string intersections_str;
+        for (const auto &intersection : intersections)
+        {
+            if (!intersections_str.empty())
+                intersections_str += std::string("\n          ");
+            intersections_str += intersection.ToString();
+        }
+        str += intersections_str;
+
+        return str;
+    }
+
 };
 
 inline void RouteStep::Invalidate()

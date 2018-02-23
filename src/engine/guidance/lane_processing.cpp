@@ -20,6 +20,9 @@ using namespace osrm::guidance;
 std::vector<RouteStep> anticipateLaneChange(std::vector<RouteStep> steps,
                                             const double min_distance_needed_for_lane_change)
 {
+    //GDG
+    std::cout << __FILE__ << ":" << __LINE__ << " | anticipateLaneChange TOP" << std::endl;
+
     // Lane anticipation works on contiguous ranges of short steps that have lane information
     const auto is_short_has_lanes = [&](const RouteStep &step) {
         const auto has_lanes = step.intersections.front().lanes.lanes_in_turn > 0;

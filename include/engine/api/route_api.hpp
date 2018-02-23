@@ -47,6 +47,9 @@ class RouteAPI : public BaseAPI
     void MakeResponse(const InternalManyRoutesResult &raw_routes,
                       util::json::Object &response) const
     {
+        //GDG
+        std::cout << __FILE__ << ":" << __LINE__ << " | MakeResponse TOP" << std::endl;
+
         BOOST_ASSERT(!raw_routes.routes.empty());
 
         util::json::Array jsRoutes;
@@ -100,11 +103,26 @@ class RouteAPI : public BaseAPI
         return annotations_store;
     }
 
+    //GDG
+    void PrintSteps(const std::vector<guidance::RouteStep> &steps, const std::string label) const
+    {
+        std::cout << "### AFTER " << label << " #########################################" << std::endl;
+        auto i = 1;
+        for (const auto &step : steps)
+        {
+            std::cout << "STEP[" << i++ << "] " << step.ToString() << std::endl;
+        }
+        std::cout << "###################################################" << std::endl << std::endl;
+    }
+
     util::json::Object MakeRoute(const std::vector<PhantomNodes> &segment_end_coordinates,
                                  const std::vector<std::vector<PathData>> &unpacked_path_segments,
                                  const std::vector<bool> &source_traversed_in_reverse,
                                  const std::vector<bool> &target_traversed_in_reverse) const
     {
+        //GDG
+        std::cout << __FILE__ << ":" << __LINE__ << " | MakeRoute TOP" << std::endl;
+
         std::vector<guidance::RouteLeg> legs;
         std::vector<guidance::LegGeometry> leg_geometries;
         auto number_of_legs = segment_end_coordinates.size();
@@ -113,6 +131,9 @@ class RouteAPI : public BaseAPI
 
         for (auto idx : util::irange<std::size_t>(0UL, number_of_legs))
         {
+            //GDG
+            std::cout << __FILE__ << ":" << __LINE__ << " | MakeRoute for loop#1 TOP" << std::endl;
+
             const auto &phantoms = segment_end_coordinates[idx];
             const auto &path_data = unpacked_path_segments[idx];
 
@@ -180,16 +201,40 @@ class RouteAPI : public BaseAPI
                  *      expects post-processed roundabouts
                  */
 
+                //GDG
+                PrintSteps(steps, std::string("assembleSteps"));
+
                 guidance::trimShortSegments(steps, leg_geometry);
+                //GDG
+                PrintSteps(steps, std::string("trimShortSegments"));
+
                 leg.steps = guidance::handleRoundabouts(std::move(steps));
+                //GDG
+                PrintSteps(leg.steps, std::string("handleRoundabouts"));
+
                 leg.steps = guidance::collapseTurnInstructions(std::move(leg.steps));
+                //GDG
+                PrintSteps(leg.steps, std::string("collapseTurnInstructions"));
+
                 leg.steps = guidance::anticipateLaneChange(std::move(leg.steps));
+                //GDG
+                PrintSteps(leg.steps, std::string("anticipateLaneChange"));
+
                 leg.steps = guidance::buildIntersections(std::move(leg.steps));
+                //GDG
+                PrintSteps(leg.steps, std::string("buildIntersections"));
+
                 leg.steps = guidance::suppressShortNameSegments(std::move(leg.steps));
+                //GDG
+                PrintSteps(leg.steps, std::string("suppressShortNameSegments"));
+
                 leg.steps = guidance::assignRelativeLocations(std::move(leg.steps),
                                                               leg_geometry,
                                                               phantoms.source_phantom,
                                                               phantoms.target_phantom);
+                //GDG
+                PrintSteps(leg.steps, std::string("assignRelativeLocations"));
+
                 leg_geometry = guidance::resyncGeometry(std::move(leg_geometry), leg.steps);
             }
 
@@ -213,6 +258,9 @@ class RouteAPI : public BaseAPI
         std::vector<util::json::Value> step_geometries;
         for (const auto idx : util::irange<std::size_t>(0UL, legs.size()))
         {
+            //GDG
+            std::cout << __FILE__ << ":" << __LINE__ << " | MakeRoute for loop#2 TOP" << std::endl;
+
             auto &leg_geometry = leg_geometries[idx];
 
             step_geometries.reserve(step_geometries.size() + legs[idx].steps.size());

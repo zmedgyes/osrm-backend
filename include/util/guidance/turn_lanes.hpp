@@ -79,6 +79,14 @@ class LaneTuple
         boost::hash_combine(seed, tup.first_lane_from_the_right);
         return seed;
     }
+
+    //GDG
+    std::string ToString() const {
+        std::string str;
+        str = std::string("lanes_in_turn=") + std::to_string(lanes_in_turn)
+                + std::string(" | first_lane_from_the_right=") + std::to_string(first_lane_from_the_right);
+        return str;
+    }
 };
 
 class LaneTupleIdPair
