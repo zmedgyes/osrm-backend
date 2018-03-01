@@ -135,7 +135,7 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
             if (!edge_inbound_data.reversed)
             {
                 // Store the turn type of incoming driveable edges.
-                incoming_turn_type.insert(guidance::getTurnDirection(
+                incoming_turn_type.insert(guidance::getModifiedTurnDirection(
                     get_angle(edge_from.node, edge_inbound, current.edge)));
 
                 // Skip any inbound edges not oneway (i.e. skip bidirectional)
@@ -175,8 +175,8 @@ std::unordered_set<EdgeID> findSegregatedNodes(const extractor::NodeBasedGraphFa
             if (!edge_to.reversed)
             {
                 // Store outgoing turn type for any driveable edges
-                outgoing_turn_type.insert(
-                    guidance::getTurnDirection(get_angle(node1, current.edge, edge_to.edge)));
+              outgoing_turn_type.insert(guidance::getModifiedTurnDirection(
+                  get_angle(node1, current.edge, edge_to.edge)));
 
                 // Skip any outbound edges not oneway (i.e. skip bidirectional)
                 // and link edge

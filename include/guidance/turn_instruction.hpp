@@ -244,6 +244,30 @@ inline guidance::DirectionModifier::Enum getTurnDirection(const double angle)
     return guidance::DirectionModifier::UTurn;
 }
 
+// Returns the turn type based on the Valhalla turn degree conversion
+inline guidance::DirectionModifier::Enum getModifiedTurnDirection(const double angle)
+{
+  // An angle of zero is a u-turn
+  // 180 goes perfectly straight
+  // 0-180 are right turns
+  // 180-360 are left turns
+  if (angle > 10 && angle < 45) //180-170 && 180-135
+      return guidance::DirectionModifier::SharpRight;
+  if (angle >= 45 && angle < 135) //180-135 && 180-45
+      return guidance::DirectionModifier::Right;
+  if (angle >= 135 && angle < 170)  //180-45 && 180-10
+      return guidance::DirectionModifier::SlightRight;
+  if (angle >= 170 && angle <= 190) //180-10 && 540-350
+      return guidance::DirectionModifier::Straight;
+  if (angle > 190 && angle <= 225)  //540-349 && 540-316
+      return guidance::DirectionModifier::SlightLeft;
+  if (angle > 225 && angle <= 315) //540-315 && 540-225
+      return guidance::DirectionModifier::Left;
+  if (angle > 315 && angle <= 350) //540-225 && 540-190
+      return guidance::DirectionModifier::SharpLeft;
+  return guidance::DirectionModifier::UTurn;
+}
+
 // swaps left <-> right modifier types
 OSRM_ATTR_WARN_UNUSED
 inline guidance::DirectionModifier::Enum
