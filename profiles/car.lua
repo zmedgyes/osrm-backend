@@ -467,7 +467,7 @@ function process_turn(profile, turn)
   end
 
   -- penalize leaving the motorway to prevent divebombs
-  if source_is_motorway == true and target_is_motorway == true then
+  if turn.source_is_motorway and turn.target_is_link then
     turn.weight = turn.weight * 1.5 + 60  -- @CHAUTODO #arbitrarynumber
   end
 
