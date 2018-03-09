@@ -478,7 +478,7 @@ function process_turn(profile, turn)
   -- penalize leaving the motorway to prevent divebombs
   if turn.source_is_motorway and turn.target_is_link then
     local old_turn_weight = turn.weight;
-    turn.weight = turn.weight * 1.5 + 60  -- @CHAUTODO #arbitrarynumber
+    turn.weight = turn.weight * 10  -- @CHAUTODO #arbitrarynumber
     print('found a motorway exit; changing from ' .. tostring(old_turn_weight) .. ' to ' .. tostring(turn.weight))
     changed = true
   end
