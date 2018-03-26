@@ -28,28 +28,12 @@ namespace engine
 namespace plugins
 {
 
-// Filters PhantomNodes to obtain a set of viable candiates
+// Filters PhantomNodes to obtain a set of viable candidates
 void filterCandidates(const std::vector<util::Coordinate> &coordinates,
                       MatchPlugin::CandidateLists &candidates_lists)
 {
     for (const auto current_coordinate : util::irange<std::size_t>(0, coordinates.size()))
     {
-        bool allow_uturn = false;
-
-        if (coordinates.size() - 1 > current_coordinate && 0 < current_coordinate)
-        {
-            double turn_angle =
-                util::coordinate_calculation::computeAngle(coordinates[current_coordinate - 1],
-                                                           coordinates[current_coordinate],
-                                                           coordinates[current_coordinate + 1]);
-
-            // sharp turns indicate a possible uturn
-            if (turn_angle <= 45.0 || turn_angle >= 315.0)
-            {
-                allow_uturn = true;
-            }
-        }
-
         auto &candidates = candidates_lists[current_coordinate];
         if (candidates.empty())
         {
@@ -71,6 +55,7 @@ void filterCandidates(const std::vector<util::Coordinate> &coordinates,
                                 lhs.distance < rhs.distance)));
                   });
 
+        // deduplicate candidates that share forward/reverse segment ids
         auto new_end =
             std::unique(candidates.begin(),
                         candidates.end(),
@@ -82,31 +67,28 @@ void filterCandidates(const std::vector<util::Coordinate> &coordinates,
                         });
         candidates.resize(new_end - candidates.begin());
 
-        if (!allow_uturn)
-        {
-            const auto compact_size = candidates.size();
-            for (const auto i : util::irange<std::size_t>(0, compact_size))
-            {
-                // Split edge if it is bidirectional and append reverse direction to end of list
-                if (candidates[i].phantom_node.forward_segment_id.enabled &&
-                    candidates[i].phantom_node.reverse_segment_id.enabled)
-                {
-                    PhantomNode reverse_node(candidates[i].phantom_node);
-                    reverse_node.forward_segment_id.enabled = false;
-                    candidates.push_back(
-                        PhantomNodeWithDistance{reverse_node, candidates[i].distance});
-
-                    candidates[i].phantom_node.reverse_segment_id.enabled = false;
-                }
-            }
-        }
-
         // sort by distance to make pruning effective
         std::sort(candidates.begin(),
                   candidates.end(),
                   [](const PhantomNodeWithDistance &lhs, const PhantomNodeWithDistance &rhs) {
                       return lhs.distance < rhs.distance;
                   });
+
+        const auto compact_size = candidates.size();
+        for (const auto i : util::irange<std::size_t>(0, compact_size))
+        {
+            // Split edge if it is bidirectional and append reverse direction to end of list
+            if (candidates[i].phantom_node.forward_segment_id.enabled &&
+                candidates[i].phantom_node.reverse_segment_id.enabled)
+            {
+                PhantomNode reverse_node(candidates[i].phantom_node);
+                reverse_node.forward_segment_id.enabled = false;
+                candidates.push_back(
+                    PhantomNodeWithDistance{reverse_node, candidates[i].distance});
+
+                candidates[i].phantom_node.reverse_segment_id.enabled = false;
+            }
+        }
     }
 }
 
