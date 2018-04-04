@@ -215,6 +215,7 @@ SubMatchingList mapMatching(SearchEngineData<Algorithm> &engine_working_data,
                 {
                     const double emission_pr = emission_log_probabilities[t][s_prime];
                     double new_value = prev_viterbi[s] + emission_pr;
+                    // bail early if current best candidate is already better than the estimate of the new probability
                     if (current_viterbi[s_prime] > new_value)
                     {
                         continue;
@@ -238,6 +239,7 @@ SubMatchingList mapMatching(SearchEngineData<Algorithm> &engine_working_data,
                         continue;
                     }
 
+                    // TODO ... add uturn consideration penalty here
                     const double transition_pr = transition_log_probability(d_t);
                     new_value += transition_pr;
 
