@@ -128,10 +128,13 @@ ContractorGraph toContractorGraph(NodeID number_of_nodes, InputEdgeContainer inp
 
 template <class Edge, typename GraphT> inline std::vector<Edge> toEdges(GraphT graph)
 {
+    util::UnbufferedLog log;
+    log << "toEdges graph nodes " << graph.GetNumberOfNodes() << " edges "
+        << graph.GetNumberOfEdges();
+
     std::vector<Edge> edges;
     edges.reserve(graph.GetNumberOfEdges());
 
-    util::UnbufferedLog log;
     log << "Getting edges of minimized graph ";
     util::Percent p(log, graph.GetNumberOfNodes());
     const NodeID number_of_nodes = graph.GetNumberOfNodes();

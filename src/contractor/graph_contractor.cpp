@@ -760,8 +760,8 @@ std::vector<bool> contractGraph(ContractorGraph &graph,
         ++current_level;
     }
 
-    node_data.Renumber(new_to_old_node_id);
-    RenumberGraph(graph, new_to_old_node_id);
+    // node_data.Renumber(new_to_old_node_id);
+    // RenumberGraph(graph, new_to_old_node_id);
 
     return std::move(node_data.is_core);
 }
