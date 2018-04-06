@@ -493,7 +493,7 @@ template <typename RTreeT, typename DataFacadeT> class GeospatialQuery
 
         EdgeDistance reverse_distance_offset = 0;
         for (auto current = reverse_geometry_range.begin() + 1;
-             current != reverse_geometry_range.begin() + data.fwd_segment_position + 1;
+             current != reverse_geometry_range.end() - data.fwd_segment_position;
              ++current)
         {
             auto prev = current - 1;
@@ -516,13 +516,11 @@ template <typename RTreeT, typename DataFacadeT> class GeospatialQuery
         {
             forward_weight = static_cast<EdgeWeight>(forward_weight * ratio);
             forward_duration = static_cast<EdgeDuration>(forward_duration * ratio);
-            forward_distance = static_cast<EdgeDistance>(forward_distance * ratio);
         }
         if (data.reverse_segment_id.id != SPECIAL_SEGMENTID)
         {
             reverse_weight -= static_cast<EdgeWeight>(reverse_weight * ratio);
             reverse_duration -= static_cast<EdgeDuration>(reverse_duration * ratio);
-            reverse_distance -= static_cast<EdgeDistance>(reverse_distance * ratio);
         }
 
         // check phantom node segments validity
