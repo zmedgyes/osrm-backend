@@ -506,8 +506,8 @@ template <typename RTreeT, typename DataFacadeT> class GeospatialQuery
         EdgeDuration reverse_duration =
             reverse_duration_range[reverse_duration_range.size() - data.fwd_segment_position - 1];
         EdgeDistance reverse_distance = util::coordinate_calculation::haversineDistance(
-            datafacade.GetCoordinateOfNode(geometry_range[geometry_range.size() -
-                                                                  data.fwd_segment_position - 1]),
+            datafacade.GetCoordinateOfNode(
+                geometry_range[geometry_range.size() - data.fwd_segment_position - 1]),
             point_on_segment);
 
         ratio = std::min(1.0, std::max(0.0, ratio));
