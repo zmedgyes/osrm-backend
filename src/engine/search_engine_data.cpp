@@ -108,6 +108,7 @@ using MLD = routing_algorithms::mld::Algorithm;
 SearchEngineData<MLD>::SearchEngineHeapPtr SearchEngineData<MLD>::forward_heap_1;
 SearchEngineData<MLD>::SearchEngineHeapPtr SearchEngineData<MLD>::reverse_heap_1;
 SearchEngineData<MLD>::ManyToManyHeapPtr SearchEngineData<MLD>::many_to_many_heap;
+SearchEngineData<MLD>::UnpackingCachePtr SearchEngineData<MLD>::unpacking_cache;
 
 void SearchEngineData<MLD>::InitializeOrClearFirstThreadLocalStorage(unsigned number_of_nodes)
 {
@@ -139,6 +140,18 @@ void SearchEngineData<MLD>::InitializeOrClearManyToManyThreadLocalStorage(unsign
     else
     {
         many_to_many_heap.reset(new ManyToManyQueryHeap(number_of_nodes));
+    }
+}
+
+void SearchEngineData<MLD>::InitializeOrClearUnpackingCacheThreadLocalStorage(unsigned timestamp)
+{
+    if (unpacking_cache.get())
+    {
+        unpacking_cache->Clear(timestamp);
+    }
+    else
+    {
+        unpacking_cache.reset(new UnpackingCache(timestamp));
     }
 }
 }

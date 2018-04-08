@@ -106,14 +106,18 @@ template <> struct SearchEngineData<routing_algorithms::mld::Algorithm>
 
     using SearchEngineHeapPtr = boost::thread_specific_ptr<QueryHeap>;
     using ManyToManyHeapPtr = boost::thread_specific_ptr<ManyToManyQueryHeap>;
+    using UnpackingCachePtr = boost::thread_specific_ptr<UnpackingCache>;
 
     static SearchEngineHeapPtr forward_heap_1;
     static SearchEngineHeapPtr reverse_heap_1;
     static ManyToManyHeapPtr many_to_many_heap;
+    static UnpackingCachePtr unpacking_cache;
 
     void InitializeOrClearFirstThreadLocalStorage(unsigned number_of_nodes);
 
     void InitializeOrClearManyToManyThreadLocalStorage(unsigned number_of_nodes);
+
+    void InitializeOrClearUnpackingCacheThreadLocalStorage(unsigned timestamp);
 };
 }
 }

@@ -61,6 +61,7 @@ class DataWatchdogImpl<AlgorithmT, datafacade::ContiguousInternalMemoryDataFacad
                     std::make_shared<datafacade::SharedMemoryAllocator>(
                         std::vector<storage::SharedRegionRegister::ShmKey>{
                             static_region.shm_key, updatable_region.shm_key}), static_region.timestamp);
+
         }
 
         watcher = std::thread(&DataWatchdogImpl::Run, this);

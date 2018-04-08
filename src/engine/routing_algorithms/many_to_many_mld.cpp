@@ -1,5 +1,5 @@
 #include "engine/routing_algorithms/many_to_many.hpp"
-#include "engine/routing_algorithms/routing_base.hpp"
+#include "engine/routing_algorithms/routing_base_mld.hpp"
 
 #include <boost/assert.hpp>
 #include <boost/range/iterator_range_core.hpp>
@@ -461,29 +461,31 @@ manyToManySearch(SearchEngineData<Algorithm> &engine_working_data,
     std::vector<EdgeWeight> weights_table(number_of_entries, INVALID_EDGE_WEIGHT);
     std::vector<EdgeDuration> durations_table(number_of_entries, MAXIMAL_EDGE_DURATION);
     std::vector<EdgeDistance> distances_table(number_of_entries, MAXIMAL_EDGE_DURATION);
+    std::vector<NodeID> middle_nodes_table(number_of_entries, SPECIAL_NODEID);
 
     std::vector<NodeBucket> search_space_with_buckets;
+    std::vector<NodeID> packed_leg;
 
     // Populate buckets with paths from all accessible nodes to destinations via backward searches
     for (std::uint32_t column_idx = 0; column_idx < target_indices.size(); ++column_idx)
     {
         const auto index = target_indices[column_idx];
-        const auto &phantom = phantom_nodes[index];
+        const auto &target_phantom = phantom_nodes[index];
 
         engine_working_data.InitializeOrClearManyToManyThreadLocalStorage(
             facade.GetNumberOfNodes());
         auto &query_heap = *(engine_working_data.many_to_many_heap);
 
         if (DIRECTION == FORWARD_DIRECTION)
-            insertTargetInHeap(query_heap, phantom);
+            insertTargetInHeap(query_heap, target_phantom);
         else
-            insertSourceInHeap(query_heap, phantom);
+            insertSourceInHeap(query_heap, target_phantom);
 
         // explore search space
         while (!query_heap.Empty())
         {
             backwardRoutingStep<DIRECTION>(
-                facade, column_idx, query_heap, search_space_with_buckets, phantom);
+                facade, column_idx, query_heap, search_space_with_buckets, target_phantom);
         }
     }
 
@@ -493,18 +495,18 @@ manyToManySearch(SearchEngineData<Algorithm> &engine_working_data,
     // Find shortest paths from sources to all accessible nodes
     for (std::uint32_t row_idx = 0; row_idx < source_indices.size(); ++row_idx)
     {
-        const auto index = source_indices[row_idx];
-        const auto &phantom = phantom_nodes[index];
+        const auto source_index = source_indices[row_idx];
+        const auto &source_phantom = phantom_nodes[source_index];
 
         // Clear heap and insert source nodes
-        engine_working_data.InitializeOrClearManyToManyThreadLocalStorage(
-            facade.GetNumberOfNodes());
+        // engine_working_data.InitializeOrClearManyToManyThreadLocalStorage(
+        //     facade.GetNumberOfNodes());
         auto &query_heap = *(engine_working_data.many_to_many_heap);
 
         if (DIRECTION == FORWARD_DIRECTION)
-            insertSourceInHeap(query_heap, phantom);
+            insertSourceInHeap(query_heap, source_phantom);
         else
-            insertTargetInHeap(query_heap, phantom);
+            insertTargetInHeap(query_heap, source_phantom);
 
         // Explore search space
         while (!query_heap.Empty())
@@ -517,7 +519,94 @@ manyToManySearch(SearchEngineData<Algorithm> &engine_working_data,
                                           search_space_with_buckets,
                                           weights_table,
                                           durations_table,
-                                          phantom);
+                                          source_phantom);
+        }
+
+        // TODO: CREATE UNIT TESTS FOR EACH OF THE RETRIEVING PACK PATH FUNCTIONS
+        // 1. Recreate packed path
+        // 2. Unpack path
+        // 3. Offset the durations
+
+        for (unsigned column_idx = 0; column_idx < number_of_targets; ++column_idx)
+        {
+            auto target_index = target_indices[column_idx];
+
+            if (source_index == target_index)
+            {
+                durations_table[row_idx * number_of_targets + column_idx] = 0;
+                distances_table[row_idx * number_of_targets + column_idx] = 0.0;
+                continue;
+            }
+
+            // const auto &target_phantom = phantom_nodes[target_indices[column_idx]];
+            NodeID middle_node_id = middle_nodes_table[row_idx * number_of_targets + column_idx];
+
+            if (middle_node_id == SPECIAL_NODEID) // takes care of one-ways
+            {
+                durations_table[row_idx * number_of_targets + column_idx] =
+                    MAXIMAL_EDGE_DURATION; // should this be invalid edge duration? what is the
+                                           // difference between maximal and invalid?
+                distances_table[row_idx * number_of_targets + column_idx] = MAXIMAL_EDGE_DISTANCE;
+                continue;
+            }
+
+            // ASSUMPTION: 1) path should be in the same clique arc
+            // clique is a subset of vertices in a graph that all know each other
+            // so ASSUMPTION: clique arc is all the vetices in this subgraph
+            // ASSUMPTION: this subgraph is actually a "level" in MLD
+            // STRATEGY: get this packed path, traverse it and pull out nodeids that are from the
+            // same clique (when bool is true)
+
+            // ASSUMPTION 2) I'm using the FORWARD DIRECTION because in the manyToManySearch
+            // function,
+            // the many to many search function is called with forward direction and I'm expecting
+            // the retrieving the packed path will be in the same direction:
+            // mld::manyToManySearch<FORWARD_DIRECTION>(
+            // Other things that I've thought that this direction could be affected by are whether
+            // it's the backward step or the forward step in the bidirectional search.
+            // If things are weird, I can also try with REVERSE_DIRECTION
+
+            using PackedEdge = std::tuple</*from*/ NodeID, /*to*/ NodeID, /*from_clique_arc*/ bool>;
+            using PackedPath = std::vector<PackedEdge>;
+
+            // Step 1: Find path from source to middle node
+            PackedPath forward_packed_path_from_source_to_middle =
+                mld::retrievePackedPathFromSingleManyToManyHeap<FORWARD_DIRECTION>(
+                    query_heap,
+                    middle_node_id); // packed_leg_from_source_to_middle
+            // std::reverse(packed_leg.begin(), packed_leg.end());
+
+            // EXPERIMENT
+            PackedPath reverse_packed_path_from_source_to_middle =
+                mld::retrievePackedPathFromSingleManyToManyHeap<REVERSE_DIRECTION>(query_heap,
+                                                                                   middle_node_id);
+
+            // packed_leg.push_back(middle_node_id);
+
+            // // Step 2: Find path from middle to target node
+            // retrievePackedPathFromSearchSpace(middle_node_id,
+            //                                   column_idx,
+            //                                   search_space_with_buckets,
+            //                                   packed_leg); // packed_leg_from_middle_to_target
+
+            std::cout << "forward_packed_path_from_source_to_middle: " << std::endl;
+            for (auto packed_edge : reverse_packed_path_from_source_to_middle)
+            {
+                std::cout << "packed_edge_from: " << std::get<0>(packed_edge)
+                          << "packed_edge_to: " << std::get<1>(packed_edge)
+                          << "packed_edge_from_clique_arc: " << std::get<2>(packed_edge)
+                          << std::endl;
+            }
+            std::cout << std::endl;
+            std::cout << "reverse_packed_path_from_source_to_middle: " << std::endl;
+            for (auto packed_edge : reverse_packed_path_from_source_to_middle)
+            {
+                std::cout << "packed_edge_frome: " << std::get<0>(packed_edge)
+                          << "packed_edge_to: " << std::get<1>(packed_edge)
+                          << "packed_edge_from_clique_arc: " << std::get<2>(packed_edge)
+                          << std::endl;
+            }
+            std::cout << std::endl;
         }
     }
 
