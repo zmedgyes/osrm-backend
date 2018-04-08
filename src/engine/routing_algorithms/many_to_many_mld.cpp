@@ -380,6 +380,7 @@ void forwardRoutingStep(const DataFacade<Algorithm> &facade,
                         const std::vector<NodeBucket> &search_space_with_buckets,
                         std::vector<EdgeWeight> &weights_table,
                         std::vector<EdgeDuration> &durations_table,
+                        std::vector<NodeID> &middle_nodes_table,
                         const PhantomNode &phantom_node)
 {
     const auto node = query_heap.DeleteMin();
@@ -406,6 +407,7 @@ void forwardRoutingStep(const DataFacade<Algorithm> &facade,
                                   : row_idx + column_idx * number_of_sources;
         auto &current_weight = weights_table[location];
         auto &current_duration = durations_table[location];
+        middle_nodes_table[location] = node;
 
         // Check if new weight is better
         auto new_weight = source_weight + target_weight;
@@ -463,6 +465,13 @@ manyToManySearch(SearchEngineData<Algorithm> &engine_working_data,
     std::vector<EdgeDistance> distances_table(number_of_entries, MAXIMAL_EDGE_DURATION);
     std::vector<NodeID> middle_nodes_table(number_of_entries, SPECIAL_NODEID);
 
+    std::cout << "middle_nodes_table with special node ids: ";
+    for (auto middle_node_id = middle_nodes_table.begin(); middle_node_id != middle_nodes_table.end(); ++middle_node_id)
+    {
+        std::cout << *middle_node_id << ", ";
+    }
+    std::cout << std::endl;
+
     std::vector<NodeBucket> search_space_with_buckets;
     std::vector<NodeID> packed_leg;
 
@@ -519,14 +528,22 @@ manyToManySearch(SearchEngineData<Algorithm> &engine_working_data,
                                           search_space_with_buckets,
                                           weights_table,
                                           durations_table,
+                                          middle_nodes_table,
                                           source_phantom);
         }
 
+        std::cout << "middle_nodes_table: ";
+        for (auto middle_node_id = middle_nodes_table.begin(); middle_node_id != middle_nodes_table.end(); ++middle_node_id)
+        {
+            std::cout << *middle_node_id << ", ";
+        }
+        std::cout << std::endl;
         // TODO: CREATE UNIT TESTS FOR EACH OF THE RETRIEVING PACK PATH FUNCTIONS
         // 1. Recreate packed path
         // 2. Unpack path
         // 3. Offset the durations
 
+        std::cout << "do I get to before path unpacking?" << std::endl;
         for (unsigned column_idx = 0; column_idx < number_of_targets; ++column_idx)
         {
             auto target_index = target_indices[column_idx];
@@ -537,9 +554,13 @@ manyToManySearch(SearchEngineData<Algorithm> &engine_working_data,
                 distances_table[row_idx * number_of_targets + column_idx] = 0.0;
                 continue;
             }
-
-            // const auto &target_phantom = phantom_nodes[target_indices[column_idx]];
+            const auto &target_phantom = phantom_nodes[target_index];
             NodeID middle_node_id = middle_nodes_table[row_idx * number_of_targets + column_idx];
+
+            std::cout << "source_phantom f id: " << source_phantom.forward_segment_id.id << " "
+                      << "source_phantom r id: " << source_phantom.reverse_segment_id.id << std::endl;
+            std::cout << "target_phantom f id: " << target_phantom.forward_segment_id.id << " "
+                      << "target_phantom r id: " << target_phantom.reverse_segment_id.id << std::endl;
 
             if (middle_node_id == SPECIAL_NODEID) // takes care of one-ways
             {
@@ -557,29 +578,15 @@ manyToManySearch(SearchEngineData<Algorithm> &engine_working_data,
             // STRATEGY: get this packed path, traverse it and pull out nodeids that are from the
             // same clique (when bool is true)
 
-            // ASSUMPTION 2) I'm using the FORWARD DIRECTION because in the manyToManySearch
-            // function,
-            // the many to many search function is called with forward direction and I'm expecting
-            // the retrieving the packed path will be in the same direction:
-            // mld::manyToManySearch<FORWARD_DIRECTION>(
-            // Other things that I've thought that this direction could be affected by are whether
-            // it's the backward step or the forward step in the bidirectional search.
-            // If things are weird, I can also try with REVERSE_DIRECTION
-
             using PackedEdge = std::tuple</*from*/ NodeID, /*to*/ NodeID, /*from_clique_arc*/ bool>;
             using PackedPath = std::vector<PackedEdge>;
 
             // Step 1: Find path from source to middle node
-            PackedPath forward_packed_path_from_source_to_middle =
-                mld::retrievePackedPathFromSingleManyToManyHeap<FORWARD_DIRECTION>(
+            PackedPath packed_path_from_source_to_middle =
+                mld::retrievePackedPathFromSingleManyToManyHeap<DIRECTION>(
                     query_heap,
                     middle_node_id); // packed_leg_from_source_to_middle
-            // std::reverse(packed_leg.begin(), packed_leg.end());
-
-            // EXPERIMENT
-            PackedPath reverse_packed_path_from_source_to_middle =
-                mld::retrievePackedPathFromSingleManyToManyHeap<REVERSE_DIRECTION>(query_heap,
-                                                                                   middle_node_id);
+            std::reverse(packed_leg.begin(), packed_leg.end());
 
             // packed_leg.push_back(middle_node_id);
 
@@ -589,24 +596,18 @@ manyToManySearch(SearchEngineData<Algorithm> &engine_working_data,
             //                                   search_space_with_buckets,
             //                                   packed_leg); // packed_leg_from_middle_to_target
 
-            std::cout << "forward_packed_path_from_source_to_middle: " << std::endl;
-            for (auto packed_edge : reverse_packed_path_from_source_to_middle)
+            std::cout << "packed_path_from_source_to_middle.size(): " << packed_path_from_source_to_middle.size() << std::endl;
+            std::cout << "packed_path_from_source_to_middle: " << packed_path_from_source_to_middle.size() << std::endl;
+            for (auto packed_edge : packed_path_from_source_to_middle)
             {
                 std::cout << "packed_edge_from: " << std::get<0>(packed_edge)
-                          << "packed_edge_to: " << std::get<1>(packed_edge)
-                          << "packed_edge_from_clique_arc: " << std::get<2>(packed_edge)
+                          << " packed_edge_to: " << std::get<1>(packed_edge)
+                          << " packed_edge_from_clique_arc: " << std::get<2>(packed_edge)
                           << std::endl;
             }
             std::cout << std::endl;
-            std::cout << "reverse_packed_path_from_source_to_middle: " << std::endl;
-            for (auto packed_edge : reverse_packed_path_from_source_to_middle)
-            {
-                std::cout << "packed_edge_frome: " << std::get<0>(packed_edge)
-                          << "packed_edge_to: " << std::get<1>(packed_edge)
-                          << "packed_edge_from_clique_arc: " << std::get<2>(packed_edge)
-                          << std::endl;
-            }
-            std::cout << std::endl;
+
+            // unpackPath
         }
     }
 
@@ -635,6 +636,7 @@ manyToManySearch(SearchEngineData<mld::Algorithm> &engine_working_data,
                  const std::vector<std::size_t> &source_indices,
                  const std::vector<std::size_t> &target_indices)
 {
+    std::cout << "main manyToManySearch" << std::endl;
     if (source_indices.size() == 1)
     { // TODO: check if target_indices.size() == 1 and do a bi-directional search
         return mld::oneToManySearch<FORWARD_DIRECTION>(
