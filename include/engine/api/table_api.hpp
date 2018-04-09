@@ -121,8 +121,8 @@ class TableAPI final : public BaseAPI
                                {
                                    return util::json::Value(util::json::Null());
                                }
-                               // division by 10 below because the duration up until now has been in
-                               // deciseconds (10s)
+                               // division by 10 below because the duration up until this
+                               // point in the code is in deciseconds (10s)
                                // as duration is computed during contraction and stored as int
                                // rather than float to save on memory usage
                                // for the extract -> shortcut (CH/MLD) -> route pipeline
