@@ -1054,3 +1054,41 @@ Feature: Car - Turn restrictions
             | a    | f  | ab,be,ef,ef       | depart,turn right,turn left,arrive                                  | a,b,e,f     |
             | c    | d  | bc,be,de,de       | depart,turn left,turn right,arrive                                  | c,b,e,d     |
             | c    | f  | bc,be,ef,ef       | depart,turn left,turn left,arrive                                   | c,b,e,f     |
+
+
+    @no_turning @conditionals @traffic
+    Scenario: Car - No right turn with traffic updates
+        Given the extract extra arguments "--parse-conditional-restrictions"
+                                            # time stamp for 10am on Tues, 02 May 2017 GMT
+        Given the contract extra arguments "--time-zone-file=test/data/tz/{timezone_names}/guinea.geojson --parse-conditionals-from-now=1493719200 --segment-speed-file {speeds_file}"
+        Given the customize extra arguments "--time-zone-file=test/data/tz/{timezone_names}/guinea.geojson --parse-conditionals-from-now=1493719200 --segment-speed-file {speeds_file}"
+        Given the node map
+            """
+              a
+            c j b
+            """
+
+        And the ways
+            | nodes | oneway |
+            | aj    | no     |
+            | jc    | yes    |
+            | bj    | yes    |
+
+        And the relations
+            | type        | way:from | way:to | node:via | restriction:conditional               |
+            | restriction | bj       | aj     | j        | no_right_turn @ (Mo-Fr 07:00-13:00)   |
+
+        And the speed file
+        """
+        1,3,1
+        3,1,1
+        2,3,1
+        3,2,1
+        4,3,1
+        3,4,1
+        """
+
+        When I route I should get
+          | from | to | route    | weight | #                 |
+          | b    | c  | bj,jc,jc | 1416.4 | normal turn       |
+          | b    | a  |          |          | avoids right turn |

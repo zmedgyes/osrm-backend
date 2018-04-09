@@ -34,6 +34,7 @@
       - FIXED: Return iterators instead of vectors in datafacade_base functions [#4969](https://github.com/Project-OSRM/osrm-backend/issues/4969)
     - Misc:
       - ADDED: expose name for datasource annotations as metadata [#4973](https://github.com/Project-OSRM/osrm-backend/pull/4973)
+      - CHANGED: Invalidate conditionally restricted turns [#4929](https://github.com/Project-OSRM/osrm-backend/pull/4929)
 
 # 5.16.0
   - Changes from 5.15.2:

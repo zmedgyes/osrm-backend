@@ -517,7 +517,6 @@ updateConditionalTurns(std::vector<TurnPenalty> &turn_weight_penalties,
     {
         if (IsRestrictionValid(time_zone_handler, penalty))
         {
-            std::cout << "Disabling: " << penalty.turn_offset << std::endl;
             turn_weight_penalties[penalty.turn_offset] = INVALID_TURN_PENALTY;
             updated_turns.push_back(penalty.turn_offset);
         }
@@ -761,6 +760,12 @@ Updater::LoadAndUpdateEdgeExpandedGraph(std::vector<extractor::EdgeBasedEdge> &e
 
             // Get the turn penalty and update to the new value if required
             auto turn_weight_penalty = turn_weight_penalties[edge.data.turn_id];
+            if (turn_weight_penalty == INVALID_TURN_PENALTY)
+            {
+                edge.data.weight = INVALID_EDGE_WEIGHT;
+                return;
+            }
+
             auto turn_duration_penalty = turn_duration_penalties[edge.data.turn_id];
             const auto num_nodes = segment_data.GetForwardGeometry(geometry_id.id).size();
             const auto weight_min_value = static_cast<EdgeWeight>(num_nodes);
