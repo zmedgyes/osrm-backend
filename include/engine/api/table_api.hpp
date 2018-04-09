@@ -121,6 +121,11 @@ class TableAPI final : public BaseAPI
                                {
                                    return util::json::Value(util::json::Null());
                                }
+                               // division by 10 below because the duration up until now has been in
+                               // deciseconds (10s)
+                               // as duration is computed during contraction and stored as int
+                               // rather than float to save on memory usage
+                               // for the extract -> shortcut (CH/MLD) -> route pipeline
                                return util::json::Value(util::json::Number(duration / 10.));
                            });
             json_table.values.push_back(std::move(json_row));
@@ -147,7 +152,10 @@ class TableAPI final : public BaseAPI
                                {
                                    return util::json::Value(util::json::Null());
                                }
-                               return util::json::Value(util::json::Number(std::round(distance * 100)/100)); // look up docs for std::round -- should take care of flip flopping cuke tests
+                               // std::round(distance * 100.)/100.) below is because we want to
+                               // predictably round to 2 decimal places
+                               return util::json::Value(
+                                   util::json::Number(std::round(distance * 100.) / 100.));
                            });
             json_table.values.push_back(std::move(json_row));
         }

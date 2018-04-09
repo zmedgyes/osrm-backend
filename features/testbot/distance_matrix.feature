@@ -1,8 +1,6 @@
 @matrix @testbot
 Feature: Basic Distance Matrix
-# note that results are travel time, specified in 1/10th of seconds
-# since testbot uses a default speed of 100m/10s, the result matches
-# the number of meters as long as the way type is the default 'primary'
+# note that results of travel time are in seconds and travel distance are in metres
 
     Background:
         Given the profile "testbot"
@@ -24,9 +22,9 @@ Feature: Basic Distance Matrix
             | b | 10 | 0  |
 
         When I request a travel distance matrix I should get
-            |   | a   | b   |
-            | a | 0   | 9.997721 |
-            | b | 9.997721 | 0   |
+            |   |   a   |   b   |
+            | a | 0     | 99.98 |
+            | b | 99.98 | 0     |
 
     Scenario: Testbot - Travel time matrix of minimal network with excludes
         Given the query options
@@ -53,11 +51,11 @@ Feature: Basic Distance Matrix
             | d |    |    | 10 | 0  |
 
         When I request a travel distance matrix I should get
-            |   |  a        |  b        |  c       |  d       |
-            | a |  0        |  9.997721 |          |          |
-            | b | 9.997721  |  0        |          |          |
-            | c |           |           | 0        | 9.997724 |
-            | d |           |           | 9.997724 | 0        |
+            |   |   a   |   b    |   c   |  d    |
+            | a |   0   |  99.98 |       |       |
+            | b | 99.98 |   0    |       |       |
+            | c |       |        |   0   | 99.98 |
+            | d |       |        | 99.98 |   0   |
 
     Scenario: Testbot - Travel time matrix of minimal network with different exclude
         Given the query options
@@ -85,11 +83,11 @@ Feature: Basic Distance Matrix
             | d | 25 | 15 | 10 | 0  |
 
         When I request a travel distance matrix I should get
-            |   |     a      |     b       |     c      |     d     |
-            | a |     0      | 39.995459   | 9.999245   | 29.996216 |
-            | b |  39.995459 |  0          | 29.994693  | 9.999245  |
-            | c |  10.000765 |  29.996213  | 0          | 19.99697  |
-            | d |  29.996216 |  9.999245   | 19.995448  |     0     |
+            |   |   a    |   b    |   c    |   d    |
+            | a |   0    | 399.95 | 99.99  | 299.96 |
+            | b | 399.95 |   0    | 299.95 | 99.99  |
+            | c | 100.01 | 299.96 |   0    | 199.97 |
+            | d | 299.96 | 99.99  | 199.95 |   0    |
 
 
     Scenario: Testbot - Travel time matrix of minimal network with excludes combination
@@ -117,11 +115,11 @@ Feature: Basic Distance Matrix
             | d | 10 | 0  | 10 | 0  |
 
         When I request a travel distance matrix I should get
-            |   |  a       |  b       |  c        |  d       |
-            | a |  0       | 9.997724 |  0        | 9.997724 |
-            | b | 9.997724 |  0       | 9.997724  |  0       |
-            | c |  0       | 9.997724 |  0        | 9.997724 |
-            | d | 9.997724 |  0       |  9.997724 |  0       |
+            |   |  a    |  b    |  c     |  d    |
+            | a |  0    | 99.98 |  0     | 99.98 |
+            | b | 99.98 |  0    | 99.98  |  0    |
+            | c |  0    | 99.98 |  0     | 99.98 |
+            | d | 99.98 |  0    | 99.98  |  0    |
 
     Scenario: Testbot - Travel time matrix with different way speeds
         Given the node map
@@ -143,19 +141,19 @@ Feature: Basic Distance Matrix
             | d | 60 | 50 | 30 | 0  |
 
         When I request a travel distance matrix I should get
-     |   |    a      |     b     |     c     |     d     |
-     | a |    0      | 9.997721  | 19.995442 | 29.993164 |
-     | b |    0      |     0     | 9.997721  | 19.995442 |
-     | c | 9.997721  | 9.997721  |     0     | 9.997721  |
-     | d | 29.993164 | 29.993164 | 19.995442 |     0     |
+            |   |   a    |   b    |    c   |    d   |
+            | a |   0    | 99.98  | 199.95 | 299.93 |
+            | b |   0    |   0    | 99.98  | 199.95 |
+            | c | 99.98  | 99.98  |   0    | 99.98  |
+            | d | 299.93 | 299.93 | 199.95 |   0    |
 
         When I request a travel time matrix I should get
             |   | a  | b  | c  | d  |
             | a | 0  | 10 | 30 | 60 |
 
         When I request a travel distance matrix I should get
-            |   | a | b        | c         | d         |
-            | a | 0 | 9.997721 | 19.995442 | 29.993164 |
+            |   | a |   b   |   c    |   d    |
+            | a | 0 | 99.98 | 199.95 | 299.93 |
 
         When I request a travel time matrix I should get
             |   |  a |
@@ -165,11 +163,11 @@ Feature: Basic Distance Matrix
             | d | 60 |
 
         When I request a travel distance matrix I should get
-            |   |     a     |
-            | a |     0     |
-            | b |     0     |
-            | c | 9.997721  |
-            | d | 29.993164 |
+            |   |   a    |
+            | a |   0    |
+            | b |   0    |
+            | c | 99.98  |
+            | d | 299.93 |
 
     Scenario: Testbot - Travel time matrix with fuzzy match
         Given the node map
@@ -187,9 +185,9 @@ Feature: Basic Distance Matrix
             | b | 10 | 0  |
 
         When I request a travel distance matrix I should get
-            |   | a        | b        |
-            | a | 0        | 9.997721 |
-            | b | 9.997721 | 0        |
+            |   |   a   |   b   |
+            | a | 0     | 99.98 |
+            | b | 99.98 | 0     |
 
     Scenario: Testbot - Travel time matrix of small grid
         Given the node map
@@ -214,11 +212,11 @@ Feature: Basic Distance Matrix
             | f | 30 | 20 | 10 | 0  |
 
         When I request a travel distance matrix I should get
-            |   |     a      | b         |     e      |     f      |
-            | a |     0      | 9.997721  |  9.999248  |  29.996216 |
-            | b |  9.997721  | 0         |  0.001524  |  19.998492 |
-            | e |  9.999245  | 0.001521  |  0         |  19.99697  |
-            | f |  29.994696 | 19.995442 |  19.995448 |     0      |
+            |   |   a    |   b    |   e    |   f    |
+            | a |   0    | 99.98  | 199.97 | 299.95 |
+            | b | 99.98  | 0      | 0.02   | 199.97 |
+            | e | 99.99  | 0.02   | 0      | 199.97 |
+            | f | 299.93 | 199.95 | 199.95 | 0      |
 
 
     Scenario: Testbot - Travel time matrix of network with unroutable parts
@@ -238,7 +236,7 @@ Feature: Basic Distance Matrix
 
         When I request a travel distance matrix I should get
             |   | a | b        |
-            | a | 0 | 9.997721 |
+            | a | 0 | 99.98    |
             | b |   | 0        |
 
     Scenario: Testbot - Travel time matrix of network with oneways
@@ -262,11 +260,11 @@ Feature: Basic Distance Matrix
             | e | 30 | 40  | 10 | 0  |
 
         When I request a travel distance matrix I should get
-            |   |     x     |     y     |     d    |     e     |
-            | x |     0     | 29.993164 | 39.99241 | 29.994687 |
-            | y | 49.991653 |     0     | 29.99469 | 19.996967 |
-            | d | 19.996967 | 29.994687 |     0    | 29.99621  |
-            | e | 29.99469  | 39.99241  | 9.997724 |     0     |
+     |   |     x   |     y   |     d   |     e   |
+     | x |     0   |  299.93 |  399.92 |  299.95 |
+     | y |  499.92 |     0   |  299.95 |  199.97 |
+     | d |  199.97 |  299.95 |    0    |  299.96 |
+     | e |  299.95 |  399.92 |  99.98  |    0    |
 
     Scenario: Testbot - Rectangular travel time matrix
         Given the node map

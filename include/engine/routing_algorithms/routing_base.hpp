@@ -248,7 +248,8 @@ void annotatePath(const FacadeT &facade,
             start_index =
                 weight_vector.size() - phantom_node_pair.source_phantom.fwd_segment_position - 1;
         }
-        end_index = weight_vector.size() - phantom_node_pair.target_phantom.fwd_segment_position - 1;
+        end_index =
+            weight_vector.size() - phantom_node_pair.target_phantom.fwd_segment_position - 1;
     }
     else
     {
