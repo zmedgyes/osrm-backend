@@ -432,9 +432,8 @@ EdgeDuration computeEdgeDuration(const FacadeT &facade, NodeID node_id, NodeID t
 }
 
 template <typename FacadeT>
-EdgeDistance computeEdgeDistance(const FacadeT &facade, NodeID node_id_1, NodeID node_id_2)
+EdgeDistance computeEdgeDistance(const FacadeT &facade, NodeID node_id_1)
 {
-    (void)node_id_2;
     const auto geometry_index = facade.GetGeometryIndex(node_id_1);
 
     // datastructures to hold extracted data from geometry

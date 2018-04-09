@@ -227,8 +227,6 @@ manyToManySearch(SearchEngineData<ch::Algorithm> &engine_working_data,
     std::vector<NodeBucket> search_space_with_buckets;
     std::vector<NodeID> packed_leg;
 
-    engine_working_data.InitializeOrClearUnpackingCacheThreadLocalStorage(facade.GetTimestamp());
-
     // Populate buckets with paths from all accessible nodes to destinations via backward searches
     for (std::uint32_t column_idx = 0; column_idx < target_indices.size(); ++column_idx)
     {
@@ -291,27 +289,20 @@ manyToManySearch(SearchEngineData<ch::Algorithm> &engine_working_data,
 
             if (middle_node_id == SPECIAL_NODEID) // takes care of one-ways
             {
-                durations_table[row_idx * number_of_targets + column_idx] =
-                    MAXIMAL_EDGE_DURATION; // should this be invalid edge duration? what is the
-                                           // difference between maximal and invalid?
+                durations_table[row_idx * number_of_targets + column_idx] = MAXIMAL_EDGE_DURATION;
                 distances_table[row_idx * number_of_targets + column_idx] = MAXIMAL_EDGE_DISTANCE;
                 continue;
             }
 
             // Step 1: Find path from source to middle node
-            ch::retrievePackedPathFromSingleManyToManyHeap(
-                query_heap,
-                middle_node_id,
-                packed_leg); // packed_leg_from_source_to_middle
+            ch::retrievePackedPathFromSingleManyToManyHeap(query_heap, middle_node_id, packed_leg);
             std::reverse(packed_leg.begin(), packed_leg.end());
 
             packed_leg.push_back(middle_node_id);
 
             // Step 2: Find path from middle to target node
-            retrievePackedPathFromSearchSpace(middle_node_id,
-                                              column_idx,
-                                              search_space_with_buckets,
-                                              packed_leg); // packed_leg_from_middle_to_target
+            retrievePackedPathFromSearchSpace(
+                middle_node_id, column_idx, search_space_with_buckets, packed_leg);
 
             if (packed_leg.size() == 1 && (needsLoopForward(source_phantom, target_phantom) ||
                                            needsLoopBackwards(source_phantom, target_phantom)))
@@ -323,10 +314,7 @@ manyToManySearch(SearchEngineData<ch::Algorithm> &engine_working_data,
             if (!packed_leg.empty())
             {
                 auto annotation =
-                    ch::calculateEBGNodeAnnotations(facade,
-                                                    packed_leg.begin(),
-                                                    packed_leg.end(),
-                                                    *engine_working_data.unpacking_cache.get());
+                    ch::calculateEBGNodeAnnotations(facade, packed_leg.begin(), packed_leg.end());
 
                 durations_table[row_idx * number_of_targets + column_idx] = annotation.first;
                 distances_table[row_idx * number_of_targets + column_idx] = annotation.second;

@@ -30,8 +30,8 @@ template <template <typename A> class FacadeT, typename AlgorithmT> class DataFa
     DataFacadeFactory() = default;
 
     template <typename AllocatorT>
-    DataFacadeFactory(std::shared_ptr<AllocatorT> allocator, unsigned timestamp)
-        : DataFacadeFactory(allocator, has_exclude_flags, timestamp)
+    DataFacadeFactory(std::shared_ptr<AllocatorT> allocator)
+        : DataFacadeFactory(allocator, has_exclude_flags)
     {
         BOOST_ASSERT_MSG(facades.size() >= 1, "At least one datafacade is needed");
     }
@@ -44,7 +44,7 @@ template <template <typename A> class FacadeT, typename AlgorithmT> class DataFa
   private:
     // Algorithm with exclude flags
     template <typename AllocatorT>
-    DataFacadeFactory(std::shared_ptr<AllocatorT> allocator, std::true_type, unsigned timestamp)
+    DataFacadeFactory(std::shared_ptr<AllocatorT> allocator, std::true_type)
     {
         const auto &index = allocator->GetIndex();
         properties = index.template GetBlockPtr<extractor::ProfileProperties>("/common/properties");
@@ -71,8 +71,7 @@ template <template <typename A> class FacadeT, typename AlgorithmT> class DataFa
             std::size_t index =
                 std::stoi(exclude_prefix.substr(index_begin + 1, exclude_prefix.size()));
             BOOST_ASSERT(index >= 0 && index < facades.size());
-            facades[index] =
-                std::make_shared<const Facade>(allocator, metric_name, index, timestamp);
+            facades[index] = std::make_shared<const Facade>(allocator, metric_name, index);
         }
 
         for (const auto index : util::irange<std::size_t>(0, properties->class_names.size()))
@@ -87,12 +86,12 @@ template <template <typename A> class FacadeT, typename AlgorithmT> class DataFa
 
     // Algorithm without exclude flags
     template <typename AllocatorT>
-    DataFacadeFactory(std::shared_ptr<AllocatorT> allocator, std::false_type, unsigned timestamp)
+    DataFacadeFactory(std::shared_ptr<AllocatorT> allocator, std::false_type)
     {
         const auto &index = allocator->GetIndex();
         properties = index.template GetBlockPtr<extractor::ProfileProperties>("/common/properties");
         const auto &metric_name = properties->GetWeightName();
-        facades.push_back(std::make_shared<const Facade>(allocator, metric_name, 0, timestamp));
+        facades.push_back(std::make_shared<const Facade>(allocator, metric_name, 0));
     }
 
     std::shared_ptr<const Facade> Get(const api::TileParameters &, std::false_type) const
