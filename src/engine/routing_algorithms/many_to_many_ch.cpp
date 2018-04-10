@@ -279,7 +279,6 @@ manyToManySearch(SearchEngineData<ch::Algorithm> &engine_working_data,
 
             if (source_index == target_index)
             {
-                durations_table[row_idx * number_of_targets + column_idx] = 0;
                 distances_table[row_idx * number_of_targets + column_idx] = 0.0;
                 continue;
             }
@@ -289,7 +288,6 @@ manyToManySearch(SearchEngineData<ch::Algorithm> &engine_working_data,
 
             if (middle_node_id == SPECIAL_NODEID) // takes care of one-ways
             {
-                durations_table[row_idx * number_of_targets + column_idx] = MAXIMAL_EDGE_DURATION;
                 distances_table[row_idx * number_of_targets + column_idx] = MAXIMAL_EDGE_DISTANCE;
                 continue;
             }
@@ -316,33 +314,10 @@ manyToManySearch(SearchEngineData<ch::Algorithm> &engine_working_data,
                 auto annotation =
                     ch::calculateEBGNodeAnnotations(facade, packed_leg.begin(), packed_leg.end());
 
-                durations_table[row_idx * number_of_targets + column_idx] = annotation.first;
-                distances_table[row_idx * number_of_targets + column_idx] = annotation.second;
+                distances_table[row_idx * number_of_targets + column_idx] = annotation;
 
                 // check the direction of travel to figure out how to calculate the offset to/from
                 // the source/target
-                if (source_phantom.forward_segment_id.id == packed_leg.front())
-                { // direction of travel is forward
-                    EdgeDuration offset = source_phantom.GetForwardDuration();
-                    durations_table[row_idx * number_of_targets + column_idx] -= offset;
-                }
-                if (source_phantom.reverse_segment_id.id == packed_leg.front())
-                {
-                    EdgeDuration offset = source_phantom.GetReverseDuration();
-                    durations_table[row_idx * number_of_targets + column_idx] -= offset;
-                }
-                if (target_phantom.forward_segment_id.id == packed_leg.back())
-                { // direction of travel is forward
-                    EdgeDuration offset = target_phantom.GetForwardDuration();
-                    durations_table[row_idx * number_of_targets + column_idx] += offset;
-                }
-                if (target_phantom.reverse_segment_id.id == packed_leg.back())
-                {
-                    EdgeDuration offset = target_phantom.GetReverseDuration();
-                    durations_table[row_idx * number_of_targets + column_idx] += offset;
-                }
-
-                // SAME THING BUT FOR DISTANCE
                 if (source_phantom.forward_segment_id.id == packed_leg.front())
                 { // direction of travel is forward
                     EdgeDistance offset = source_phantom.GetForwardDistance();
@@ -366,21 +341,7 @@ manyToManySearch(SearchEngineData<ch::Algorithm> &engine_working_data,
             }
             else
             {
-                // OFFSET DURATIONS
-                if (target_phantom.GetForwardDuration() > source_phantom.GetForwardDuration())
-                {
-                    EdgeDuration offset =
-                        target_phantom.GetForwardDuration() - source_phantom.GetForwardDuration();
-                    durations_table[row_idx * number_of_targets + column_idx] += offset;
-                }
-                else
-                {
-                    EdgeDuration offset =
-                        target_phantom.GetReverseDuration() - source_phantom.GetReverseDuration();
-                    durations_table[row_idx * number_of_targets + column_idx] += offset;
-                }
-
-                // SAME EXACT CALCULATIONS FOR DISTANCE
+                // OFFSET DISTANCES
                 if (target_phantom.GetForwardDistance() > source_phantom.GetForwardDistance())
                 {
                     EdgeDistance offset =
