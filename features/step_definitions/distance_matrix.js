@@ -7,12 +7,12 @@ module.exports = function () {
     const DURATIONS_NO_ROUTE = 2147483647;     // MAX_INT
     const DISTANCES_NO_ROUTE = 3.40282e+38;    // MAX_FLOAT
 
-    this.When(durationsRegex, function(table, callback) {tableParse.call(this, table, DURATIONS_NO_ROUTE, 'durations', callback)}.bind(this));
-    this.When(distancesRegex, function(table, callback) {tableParse.call(this, table, DISTANCES_NO_ROUTE, 'distances', callback)}.bind(this));
+    this.When(durationsRegex, function(table, callback) {tableParse.call(this, table, DURATIONS_NO_ROUTE, 'durations', callback);}.bind(this));
+    this.When(distancesRegex, function(table, callback) {tableParse.call(this, table, DISTANCES_NO_ROUTE, 'distances', callback);}.bind(this));
 };
 
-const durationsParse = function(v) { return isNaN(parseInt(v)) };
-const distancesParse = function(v) { return isNaN(parseFloat(v)) };
+const durationsParse = function(v) { return isNaN(parseInt(v)); };
+const distancesParse = function(v) { return isNaN(parseFloat(v)); };
 
 function tableParse(table, noRoute, annotation, callback) {
 
@@ -83,4 +83,4 @@ function tableParse(table, noRoute, annotation, callback) {
             this.processRowsAndDiff(table, testRow, callback);
         });
     });
-};
+}
