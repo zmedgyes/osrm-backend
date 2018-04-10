@@ -60,6 +60,14 @@ struct TableParameters : public BaseParameters
     std::vector<std::size_t> sources;
     std::vector<std::size_t> destinations;
 
+    enum class AnnotationsType
+    {
+        None = 0,
+        Duration = 0x01,
+        Distance = 0x02,
+        All = Duration | Distance
+    };
+
     TableParameters() = default;
     template <typename... Args>
     TableParameters(std::vector<std::size_t> sources_,
@@ -69,6 +77,21 @@ struct TableParameters : public BaseParameters
           destinations{std::move(destinations_)}
     {
     }
+
+    // TableParameters constructor adding the `annotations` setting in a API-compatible way.
+    template <typename... Args>
+    TableParameters(std::vector<std::size_t> sources_,
+                    std::vector<std::size_t> destinations_,
+                    const bool annotations_,
+                    Args... args_)
+        : BaseParameters{std::forward<Args>(args_)...}, sources{std::move(sources_)},
+          destinations{std::move(destinations_)}, annotations{annotations_},
+          annotations_type{annotations_ ? AnnotationsType::All : AnnotationsType::None}
+    {
+    }
+
+    bool annotations = false;
+    AnnotationsType annotations_type = AnnotationsType::None;
 
     bool IsValid() const
     {
@@ -100,6 +123,26 @@ struct TableParameters : public BaseParameters
         return true;
     }
 };
+inline bool operator&(TableParameters::AnnotationsType lhs, TableParameters::AnnotationsType rhs)
+{
+    return static_cast<bool>(
+        static_cast<std::underlying_type_t<TableParameters::AnnotationsType>>(lhs) &
+        static_cast<std::underlying_type_t<TableParameters::AnnotationsType>>(rhs));
+}
+
+inline TableParameters::AnnotationsType operator|(TableParameters::AnnotationsType lhs,
+                                                  TableParameters::AnnotationsType rhs)
+{
+    return (TableParameters::AnnotationsType)(
+        static_cast<std::underlying_type_t<TableParameters::AnnotationsType>>(lhs) |
+        static_cast<std::underlying_type_t<TableParameters::AnnotationsType>>(rhs));
+}
+
+inline TableParameters::AnnotationsType operator|=(TableParameters::AnnotationsType lhs,
+                                                   TableParameters::AnnotationsType rhs)
+{
+    return lhs = lhs | rhs;
+}
 }
 }
 }

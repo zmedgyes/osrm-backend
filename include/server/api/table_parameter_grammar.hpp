@@ -54,12 +54,40 @@ struct TableParametersGrammar final : public BaseParametersGrammar<Iterator, Sig
                     -('?' > (table_rule(qi::_r1) | BaseGrammar::base_rule(qi::_r1)) % '&');
     }
 
+    TableParametersGrammar(qi::rule<Iterator, Signature> &root_rule_) : BaseGrammar(root_rule_)
+    {
+        using AnnotationsType = engine::api::TableParameters::AnnotationsType;
+
+        const auto add_annotation = [](engine::api::TableParameters &table_parameters,
+                                       AnnotationsType table_param) {
+            table_parameters.annotations_type = table_parameters.annotations_type | table_param;
+            table_parameters.annotations =
+                table_parameters.annotations_type != AnnotationsType::None;
+        };
+
+        annotations_type.add("duration", AnnotationsType::Duration)("distance",
+                                                                    AnnotationsType::Distance);
+
+        base_rule = BaseGrammar::base_rule(qi::_r1) |
+                    (qi::lit("annotations=") >
+                     (qi::lit("true")[ph::bind(add_annotation, qi::_r1, AnnotationsType::All)] |
+                      qi::lit("false")[ph::bind(add_annotation, qi::_r1, AnnotationsType::None)] |
+                      (annotations_type[ph::bind(add_annotation, qi::_r1, qi::_1)] % ',')));
+
+        query_rule = BaseGrammar::query_rule(qi::_r1);
+    }
+
+  protected:
+    qi::rule<Iterator, Signature> base_rule;
+    qi::rule<Iterator, Signature> query_rule;
+
   private:
     qi::rule<Iterator, Signature> root_rule;
     qi::rule<Iterator, Signature> table_rule;
     qi::rule<Iterator, Signature> sources_rule;
     qi::rule<Iterator, Signature> destinations_rule;
     qi::rule<Iterator, std::size_t()> size_t_;
+    qi::symbols<char, engine::api::TableParameters::AnnotationsType> annotations_type;
 };
 }
 }
