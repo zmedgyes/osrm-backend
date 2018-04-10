@@ -290,8 +290,8 @@ void unpackPath(const DataFacade<Algorithm> &facade,
 
 template <typename BidirectionalIterator>
 EdgeDistance calculateEBGNodeAnnotations(const DataFacade<Algorithm> &facade,
-                                           BidirectionalIterator packed_path_begin,
-                                           BidirectionalIterator packed_path_end)
+                                         BidirectionalIterator packed_path_begin,
+                                         BidirectionalIterator packed_path_end)
 {
     // Make sure we have at least something to unpack
     if (packed_path_begin == packed_path_end ||
