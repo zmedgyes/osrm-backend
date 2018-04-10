@@ -222,7 +222,7 @@ curl 'http://router.project-osrm.org/route/v1/driving/13.388860,52.517037;13.397
 
 ### Table service
 
-Computes the duration of the fastest route between all pairs of supplied coordinates.
+Computes the duration of the fastest route between all pairs of supplied coordinates. Also returns the distances between the coordinate pairs. Note that the distances are not the shortest distance between two coordinates, but rather the distances of the fastest routes.
 
 ```endpoint
 GET /table/v1/{profile}/{coordinates}?{sources}=[{elem}...];&destinations=[{elem}...]
@@ -268,16 +268,113 @@ curl 'http://router.project-osrm.org/table/v1/driving/polyline(egs_Iq_aqAppHzbHu
 - `code` if the request was successful `Ok` otherwise see the service dependent and general status codes.
 - `durations` array of arrays that stores the matrix in row-major order. `durations[i][j]` gives the travel time from
   the i-th waypoint to the j-th waypoint. Values are given in seconds. Can be `null` if no route between `i` and `j` can be found.
+- `distances` array of arrays that stores the matrix in row-major order. `distances[i][j]` gives the travel distance from
+  the i-th waypoint to the j-th waypoint. Values are given in meters. Can be `null` if no route between `i` and `j` can be found.
 - `sources` array of `Waypoint` objects describing all sources in order
 - `destinations` array of `Waypoint` objects describing all destinations in order
 
 In case of error the following `code`s are supported in addition to the general ones:
 
-| Type              | Description     |
-|-------------------|-----------------|
+| Type             | Description     |
+|------------------|-----------------|
 | `NoTable`        | No route found. |
 
 All other properties might be undefined.
+
+#### Example Response
+
+```json
+{
+  "sources": [
+    {
+      "location": [
+        13.3888,
+        52.517033
+      ],
+      "hint": "PAMAgEVJAoAUAAAAIAAAAAcAAAAAAAAArss0Qa7LNEHiVIRA4lSEQAoAAAAQAAAABAAAAAAAAADMAAAAAEzMAKlYIQM8TMwArVghAwEA3wps52D3",
+      "name": "Friedrichstraße"
+    },
+    {
+      "location": [
+        13.397631,
+        52.529432
+      ],
+      "hint": "WIQBgL6mAoAEAAAABgAAAAAAAAA7AAAAhU6PQHvHj0IAAAAAQbyYQgQAAAAGAAAAAAAAADsAAADMAAAAf27MABiJIQOCbswA_4ghAwAAXwVs52D3",
+      "name": "Torstraße"
+    },
+    {
+      "location": [
+        13.428554,
+        52.523239
+      ],
+      "hint": "7UcAgP___38fAAAAUQAAACYAAABTAAAAhSQKQrXq5kKRbiZCWJo_Qx8AAABRAAAAJgAAAFMAAADMAAAASufMAOdwIQNL58wA03AhAwMAvxBs52D3",
+      "name": "Platz der Vereinten Nationen"
+    }
+  ],
+  "durations": [
+    [
+      0,
+      192.6,
+      382.8
+    ],
+    [
+      199,
+      0,
+      283.9
+    ],
+    [
+      344.7,
+      222.3,
+      0
+    ]
+  ],
+  "destinations": [
+    {
+      "location": [
+        13.3888,
+        52.517033
+      ],
+      "hint": "PAMAgEVJAoAUAAAAIAAAAAcAAAAAAAAArss0Qa7LNEHiVIRA4lSEQAoAAAAQAAAABAAAAAAAAADMAAAAAEzMAKlYIQM8TMwArVghAwEA3wps52D3",
+      "name": "Friedrichstraße"
+    },
+    {
+      "location": [
+        13.397631,
+        52.529432
+      ],
+      "hint": "WIQBgL6mAoAEAAAABgAAAAAAAAA7AAAAhU6PQHvHj0IAAAAAQbyYQgQAAAAGAAAAAAAAADsAAADMAAAAf27MABiJIQOCbswA_4ghAwAAXwVs52D3",
+      "name": "Torstraße"
+    },
+    {
+      "location": [
+        13.428554,
+        52.523239
+      ],
+      "hint": "7UcAgP___38fAAAAUQAAACYAAABTAAAAhSQKQrXq5kKRbiZCWJo_Qx8AAABRAAAAJgAAAFMAAADMAAAASufMAOdwIQNL58wA03AhAwMAvxBs52D3",
+      "name": "Platz der Vereinten Nationen"
+    }
+  ],
+  "code": "Ok",
+  "distances": [
+    [
+      0,
+      1886.89,
+      3791.3
+    ],
+    [
+      1824,
+      0,
+      2838.09
+    ],
+    [
+      3275.36,
+      2361.73,
+      0
+    ]
+  ]
+}
+```
+
 
 ### Match service
 
