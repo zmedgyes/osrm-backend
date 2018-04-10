@@ -90,7 +90,6 @@ BOOST_AUTO_TEST_CASE(invalid_table_urls)
 
 BOOST_AUTO_TEST_CASE(valid_route_hint)
 {
-
     engine::PhantomNode reference_node;
     reference_node.input_location =
         util::Coordinate(util::FloatLongitude{7.432251}, util::FloatLatitude{43.745995});
@@ -284,6 +283,7 @@ BOOST_AUTO_TEST_CASE(valid_route_urls)
                                               {util::FloatLongitude{3}, util::FloatLatitude{4}},
                                               {util::FloatLongitude{5}, util::FloatLatitude{6}},
                                               {util::FloatLongitude{7}, util::FloatLatitude{8}}};
+
     engine::PhantomNode phantom_3;
     phantom_3.input_location = coords_3[0];
     engine::PhantomNode phantom_4;
