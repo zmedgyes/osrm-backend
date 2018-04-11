@@ -16,6 +16,8 @@ SET PATH=C:\Program Files\7-Zip;%PATH%
 
 powershell Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy Unrestricted -Force
 IF %ERRORLEVEL% NEQ 0 GOTO ERROR
+CALL npm i node-cmake
+IF %ERRORLEVEL% NEQ 0 GOTO ERROR
 CALL appveyor-build.bat
 IF %ERRORLEVEL% NEQ 0 GOTO ERROR
 

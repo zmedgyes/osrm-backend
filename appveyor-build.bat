@@ -10,7 +10,8 @@ ECHO NUMBER_OF_PROCESSORS^: %NUMBER_OF_PROCESSORS%
 
 
 :: Check CMake version
-SET CMAKE_VERSION=3.9.2
+::SET CMAKE_VERSION=3.9.2
+SET CMAKE_VERSION=3.11.0
 SET PATH=%PROJECT_DIR%\cmake-%CMAKE_VERSION%-win32-x86\bin;%PATH%
 ECHO cmake^: && cmake --version
 IF %ERRORLEVEL% NEQ 0 ECHO CMAKE not found && GOTO CMAKE_NOT_OK
@@ -29,8 +30,9 @@ ECHO CMAKE_OK
 cmake --version
 
 ECHO activating VS command prompt ...
-SET PATH=C:\Program Files (x86)\MSBuild\14.0\Bin;%PATH%
-CALL "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+SET PATH=C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin;%PATH%
+CALL "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" amd64
+::CALL "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvarsall.bat" x86
 
 ECHO platform^: %platform%
 
@@ -73,11 +75,13 @@ cd build
 IF %ERRORLEVEL% NEQ 0 GOTO ERROR
 
 SET OSRMDEPSDIR=%PROJECT_DIR%/osrm-deps
+::SET OSRMDEPSDIR=%PROJECT_DIR%/osrm-deps-new
 set PREFIX=%OSRMDEPSDIR%/libs
 set BOOST_ROOT=%OSRMDEPSDIR%/boost
 set BOOST_LIBRARYDIR=%BOOST_ROOT%/lib
 set TBB_INSTALL_DIR=%OSRMDEPSDIR%/tbb
 set TBB_ARCH_PLATFORM=intel64/vc14
+::set TBB_ARCH_PLATFORM=ia32/vc14
 
 ECHO OSRMDEPSDIR       ^: %OSRMDEPSDIR%
 ECHO PREFIX            ^: %PREFIX%
@@ -99,6 +103,8 @@ cmake .. ^
 -DCMAKE_INSTALL_PREFIX=%PREFIX%
 IF %ERRORLEVEL% NEQ 0 GOTO ERROR
 
+set VCTargetsPath=C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\v140
+
 ECHO building ...
 msbuild OSRM.sln ^
 /p:Configuration=%Configuration% ^
@@ -106,7 +112,7 @@ msbuild OSRM.sln ^
 /t:rebuild ^
 /p:BuildInParallel=true ^
 /m:%NUMBER_OF_PROCESSORS% ^
-/toolsversion:14.0 ^
+/toolsversion:15.0 ^
 /p:PlatformToolset=v140 ^
 /clp:Verbosity=normal ^
 /nologo ^

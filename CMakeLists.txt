@@ -29,7 +29,7 @@ option(ENABLE_STXXL "Use STXXL library" OFF)
 option(ENABLE_LTO "Use LTO if available" OFF)
 option(ENABLE_FUZZING "Fuzz testing using LLVM's libFuzzer" OFF)
 option(ENABLE_GOLD_LINKER "Use GNU gold linker if available" ON)
-option(ENABLE_NODE_BINDINGS "Build NodeJs bindings" OFF)
+option(ENABLE_NODE_BINDINGS "Build NodeJs bindings" ON)
 option(ENABLE_GLIBC_WORKAROUND "Workaround GLIBC symbol exports" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -847,7 +847,7 @@ endif ()
 
 # add headers sanity check target that includes all headers independently
 # make sure we have all deps for the nodejs sub project's includes (nan, node)
-if (ENABLE_NODE_BINDINGS)
+if (ENABLE_NODE_BINDINGS AND FALSE)
   set(check_headers_dir "${PROJECT_BINARY_DIR}/check-headers")
   file(GLOB_RECURSE headers_to_check
     ${PROJECT_BINARY_DIR}/*.hpp
